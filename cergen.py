@@ -119,7 +119,9 @@ class gergen:
         """
         self.__veri = self.__validate_veri(veri)
         self.__boyut = self.__calculate_boyut(veri)
-        self.D = None  # Placeholder for transpose, which needs its own implementation
+        self.D = None  # Placeholder for transpose, which needs its own implementation ###################
+        # print("veri: ", self.__veri)
+        # print("boyut: ", self.__boyut)
 
     def __validate_veri(self, veri):
         """
@@ -158,13 +160,17 @@ class gergen:
             return ()
         else:
             boyut = []
-            while isinstance(veri, list):
-                boyut.append(len(veri))
-                veri = veri[0] if veri else []
-            # Check if only 1 element in the tensor
-            if len(boyut) == 1:
+            temp = veri
+            if isinstance(temp[0], list):
+                while isinstance(temp[0], list):
+                    boyut.append(len(temp))
+                    temp = temp[0]
+                boyut.append(len(temp))
+            else:
                 boyut.append(1)
-            return tuple(boyut)
+                boyut.append(len(temp))
+            return tuple(boyut) 
+
 
     def __getitem__(self, index):
         """
@@ -196,7 +202,7 @@ class gergen:
         resulting in the display of the tensor’s boyut followed by its veri.
         """
         if self.__veri is None:
-            return 'Empty gergen'
+            return 'bos gergen'
         elif isinstance(self.__veri, (int, float)):
             return f'0 boyutlu skaler gergen:\n{self.__veri}'
         else:
@@ -207,7 +213,7 @@ class gergen:
                     formatted_rows = ['[' + ', '.join(map(str, row)) + ']' for row in veri]
                     return '[' + '\n'.join(formatted_rows) + ']'
                 else:  # Single-dimensional
-                    return '[' + ', '.join(map(str, veri)) + ']'
+                    return '[[' + ', '.join(map(str, veri)) + ']]'
 
             # Determine if we're dealing with a multi-dimensional tensor or a vector of any size
             boyut = ''
@@ -317,7 +323,38 @@ class gergen:
         Called when a gergen object is added to another, using the '+' operator.
         The operation is element-wise.
         """
-        pass
+        if self.__veri is None:
+            raise ValueError("Cannot add to an empty gergen.")
+        
+        if isinstance(other, (int, float)):
+            if isinstance(self.__veri, (int, float)):
+                # Add two scalars
+                new_data = self.__veri + other
+                return gergen(new_data)
+            else:
+                # Add the scalar to each element of the gergen of any size
+                def scalar_add(data, scalar):
+                    if isinstance(data, list):
+                        return [scalar_add(subdata, scalar) for subdata in data]
+                    else:
+                        return data + scalar
+                new_data = scalar_add(self.__veri, other)
+                return gergen(new_data)
+        elif isinstance(other, gergen):
+            # Element-wise addition of two gergen objects
+            if self.__boyut != other.__boyut:
+                raise ValueError("Cannot add gergens with different dimensions.")
+            else:
+                # Add each element of the gergen of any size to the corresponding element of the other gergen
+                def elementwise_add(data1, data2):
+                    if isinstance(data1, list) and isinstance(data2, list):
+                        return [elementwise_add(subdata1, subdata2) for subdata1, subdata2 in zip(data1, data2)]
+                    else:
+                        return data1 + data2
+                new_data = elementwise_add(self.__veri, other.__veri)
+                return gergen(new_data)
+        else:
+            raise TypeError("Must be a scalar or a gergen object.")
 
     def __sub__(self, other: Union['gergen', int, float]) -> 'gergen':
         """
@@ -325,86 +362,160 @@ class gergen:
         Called when a gergen object is subtracted from another, using the '-' operator.
         The operation is element-wise.
         """
-        pass
+        if self.__veri is None:
+            raise ValueError("Cannot subtract from an empty gergen.")
+        
+        if isinstance(other, (int, float)):
+            if isinstance(self.__veri, (int, float)):
+                # Subtract two scalars
+                new_data = self.__veri - other
+                return gergen(new_data)
+            else:
+                # Subtract the scalar from each element of the gergen of any size
+                def scalar_sub(data, scalar):
+                    if isinstance(data, list):
+                        return [scalar_sub(subdata, scalar) for subdata in data]
+                    else:
+                        return data - scalar
+                new_data = scalar_sub(self.__veri, other)
+                return gergen(new_data)
+        elif isinstance(other, gergen):
+            # Element-wise subtraction of two gergen objects
+            if self.__boyut != other.__boyut:
+                raise ValueError("Cannot subtract gergens with different dimensions.")
+            else:
+                # Subtract each element of the gergen of any size from the corresponding element of the other gergen
+                def elementwise_sub(data1, data2):
+                    if isinstance(data1, list) and isinstance(data2, list):
+                        return [elementwise_sub(subdata1, subdata2) for subdata1, subdata2 in zip(data1, data2)]
+                    else:
+                        return data1 - data2
+                new_data = elementwise_sub(self.__veri, other.__veri)
+                return gergen(new_data)
+        else:
+            raise TypeError("Must be a scalar or a gergen object.")
 
     def uzunluk(self):
         """
-        Returns the total number of elements in the gergen
+        Returns the total number of elements in the gergen.
         """
-        pass
+        if self.__veri is None:
+            return 0
+        else:
+            size = 1
+            for boyut in self.__boyut: # scalar = 1 or 0 ???
+                size *= boyut
+            return size
 
     def boyut(self):
         """
-        Returns the shape of the gergen
+        Returns the shape of the gergen.
+        """
+        if self.__veri is None:
+            raise ValueError("Cannot get the shape of an empty gergen.")
+        else:
+            return self.__boyut
+        
+    def devrik(self):
+        """
+        Returns the transpose of the gergen.
         """
         pass
 
-    def devrik(self):
-    # Returns the transpose of gergen
-        pass
-
     def sin(self):
-    # Calculates the sine of each element in the given `gergen`.
+        """
+        Calculates the sine of each element in the given gergen.
+        """
         pass
 
     def cos(self):
-    # Calculates the cosine of each element in the given `gergen`.
+        """
+        Calculates the cosine of each element in the given gergen.
+        """
         pass
 
     def tan(self):
-    # Calculates the tangent of each element in the given `gergen`.
+        """
+        Calculates the tangent of each element in the given gergen.
+        """
         pass
 
     def us(self, n: int):
-    # Raises each element of the gergen object to the power 'n'. This is an element-wise operation.
+        """
+        Raises each element of the gergen object to the power 'n'. This is an element-wise operation.
+        """
         pass
 
     def log(self):
-    # Applies the logarithm function to each element of the gergen object, using the base 10.
+        """
+        Applies the logarithm function to each element of the gergen object, using the base 10.
+        """
         pass
 
     def ln(self):
-    # Applies the natural logarithm function to each element of the gergen object.
+        """
+        Applies the natural logarithm function to each element of the gergen object.
+        """
         pass
 
     def L1(self):
-    # Calculates and returns the L1 norm
+        """
+        Calculates and returns the L1 norm.
+        """
         pass
 
     def L2(self):
-    # Calculates and returns the L2 norm
+        """
+        Calculates and returns the L2 norm.
+        """
         pass
 
     def Lp(self, p):
-    # Calculates and returns the Lp norm, where p should be positive integer
+        """
+        Calculates and returns the Lp norm, where p should be a positive integer.
+        """
         pass
 
     def listeye(self):
-    # Converts the gergen object into a list or a nested list, depending on its dimensions.
+        """
+        Converts the gergen object into a list or a nested list, depending on its dimensions.
+        """
         pass
 
     def duzlestir(self):
-    # Converts the gergen object's multi-dimensional structure into a 1D structure, effectively 'flattening' the object.
+        """
+        Converts the gergen object's multi-dimensional structure into a 1D structure, effectively 'flattening' the object.
+        """
         pass
 
     def boyutlandir(self, yeni_boyut):
-    # Reshapes the gergen object to a new shape 'yeni_boyut', which is specified as a tuple.
+        """
+        Reshapes the gergen object to a new shape 'yeni_boyut', which is specified as a tuple.
+        """
         pass
 
     def ic_carpim(self, other):
-    # Calculates the inner (dot) product of this gergen object with another.
+        """
+        Calculates the inner (dot) product of this gergen object with another.
+        """
         pass
 
     def dis_carpim(self, other):
-    #Calculates the outer product of this gergen object with another.
+        """
+        Calculates the outer product of this gergen object with another.
+        """
         pass
     
     def topla(self, eksen=None):
-    #Sums up the elements of the gergen object, optionally along a specified axis 'eksen'.
+        """
+        Sums up the elements of the gergen object, optionally along a specified axis 'eksen'.
+        """
         pass
 
     def ortalama(self, eksen=None):
-    #Calculates the average of the elements of the gergen object, optionally along a specified axis 'eksen'.
+        """
+        Calculates the average of the elements of the gergen object, optionally along a specified axis 'eksen'.
+        """
         pass
 
 def main():
@@ -412,8 +523,9 @@ def main():
 
     cekirdek(2)
     g = rastgele_dogal((3, 3, 2, 4))
+    # print(g)
 
-    # test the random number generators
+    ### test the random number generators
 
     # g1 = rastgele_dogal((3, 3))
     # g1 = rastgele_gercek((3, 3, 3))
@@ -422,20 +534,35 @@ def main():
     # print(g1)
     # print(g1[0][-1])
 
-    # scaler gergens
+    ### scalar gergens and init
 
     # g3 = gergen(2)
     # print(g3)
     # print(g3.D)
 
-    # test the __getitem__ method
+    # gi = gergen(4)
+    # print(gi)
+    # print()
+    # gii = gergen([4])
+    # print(gii)
+
+    # gv = gergen([1, 2, 3])
+    # print(gv)
+    # print()
+    # gh = gergen([[1], [2], [3]])
+    # print(gh)
+
+    ### test the __getitem__ method
 
     # print(g)
+    # print()
     # print(g[0])
+    # print()
     # print(g[0, 1]) # = print(g[0][1])
+    # print()
     # print(g[0, 2, 1])
 
-    # test the __str__ method
+    ### test the __str__ method
 
     # print(gergen())
     # print(gergen(2))
@@ -452,7 +579,7 @@ def main():
     # print()
     # print(g[0, 2, -1, 3])
 
-    # test the __mul__ method
+    ### test the __mul__ method
 
     # g1 = gergen([[1, 2, 3], [4, 5, 6]])
     # gs1 = g1 * 2
@@ -481,7 +608,7 @@ def main():
     # print()
     # print(g1dm * g3)
 
-    # test the __truediv__ method
+    ### test the __truediv__ method
 
     # g1 = gergen([[1, 2, 3], [4, 5, 6]])
     # z1 = 0
@@ -501,20 +628,79 @@ def main():
     # g4 = gergen([[7, 8, 9], [10, 11, 12]])
     # print(g4 * 4 / g4)
 
-    g5 = gergen([6])
-    print(g5 / 3)
-    g6 = gergen([6, 7])
-    # print(g5 / g6) # ValueError: Cannot divide gergens with different dimensions.
-    g7 = gergen([3])
-    print(g5 / g7)
+    # g5 = gergen([6])
+    # print(g5 / 3)
+    # g6 = gergen([6, 7])
+    # # print(g5 / g6) # ValueError: Cannot divide gergens with different dimensions.
+    # g7 = gergen([3])
+    # print(g5 / g7)
 
-    # test the __add__ method
+    ### test the __add__ method
 
+    ## add two scalars
+    # gs1 = gergen(2)
+    # gs2 = gs1 + 3
+    # print(gs2)
+    # gs3 = gs1 + gs2
+    # print(gs3)
 
+    ## add a scalar to a gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6]])
+    # gs = g + 2
+    # print(gs)
 
+    ## add two gergens
+    # ga = gergen([[1, 2, 3], [4, 5, 6]])
+    # gb = gergen([[7, 8, 9], [10, 11, 12]])
+    # gc = ga + gb
+    # print(gc) # [[8, 10, 12], [14, 16, 18]]
 
+    ## add 2 1x1 gergens
+    # g11 = gergen([1])
+    # g12 = gergen([4])
+    # g13 = g11 + g12
+    # print(g13)
 
-          
+    ## add 2 1x3 gergens
+    # g21 = gergen([1, 2, 3])
+    # g22 = gergen([4, 5, 6])
+    # g23 = g21 + g22
+    # print(g23) # [[5, 7, 9]]
+
+    ## add 2 2x1 gergens
+    # g211 = gergen([[1], [2]])
+    # g212 = gergen([[3], [4]])
+    # g213 = g211 + g212
+    # print(g213) # [[4], [6]]
+
+    ## add 1x1 and 1x3 gergens - ValueError: Cannot add gergens with different dimensions.
+    # g11 = gergen([1])
+    # g13 = gergen([4, 5, 6])
+    # g113 = g11 + g13
+    # print(g113)
+
+    ## add 1x2 and 2x1 gergens - ValueError: Cannot add gergens with different dimensions.
+    # g21 = gergen([1, 2])
+    # g212 = gergen([[3], [4]])
+    # g213 = g21 + g212
+    # print(g213)
+
+    ## add scalar to 5x3x1x2 gergen
+    # g53 = rastgele_dogal((5, 3, 1, 2))
+    # print(g53)
+    # print()
+    # gs53 = g53 + 2
+    # print(gs53)
+
+    ## add 3x3x2x1 and 3x3x2x1 gergens
+    # gg1 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
+    # gg2 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
+    # gg3 = gg1 + gg2
+    # print(gg3)      
+
+    ### test the __sub__ method
+    
+
 
 
 if __name__ == "__main__":
