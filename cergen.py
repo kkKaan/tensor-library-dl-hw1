@@ -1,5 +1,6 @@
 import random
 import math
+import numpy as np
 from typing import Union
 
 def cekirdek(sayi: int):
@@ -32,6 +33,9 @@ def rastgele_dogal(boyut, aralik=(0,100), dagilim='uniform'):
     if dagilim != 'uniform':
         raise ValueError('Invalid distribution.')
     
+    if boyut == ():
+        return gergen(random.randint(aralik[0], aralik[1]))
+    
     veri = generate_nested_list_dogal(boyut, aralik)
     return gergen(veri)
 
@@ -58,6 +62,9 @@ def rastgele_gercek(boyut, aralik=(0.0, 1.0), dagilim='uniform'):
     """
     if dagilim != 'uniform':
         raise ValueError('Invalid distribution.')
+    
+    if boyut == ():
+        return gergen(random.random() * (aralik[1] - aralik[0]) + aralik[0])
     
     veri = generate_nested_list_gercek(boyut, aralik)
     return gergen(veri)
@@ -400,7 +407,7 @@ class gergen:
         Returns the total number of elements in the gergen.
         """
         if self.__veri is None:
-            return 0
+            raise ValueError("Cannot get the length of an empty gergen.")
         else:
             size = 1
             for boyut in self.__boyut: # scalar = 1 or 0 ???
@@ -420,79 +427,157 @@ class gergen:
         """
         Returns the transpose of the gergen.
         """
-        pass
+        if self.__veri is None:
+            raise ValueError("Cannot get the transpose of an empty gergen.")
+        
+        if isinstance(self.__veri, (int, float)) or self.boyut() == (1,1):
+            return self
+        
+        def transpose(data):
+            if not isinstance(data[0], list):
+                return data
+            return list(map(list, zip(*[transpose(sublist) for sublist in data])))
+        
+        new_data = transpose(self.__veri)
+        return gergen(new_data)
+
+    def __apply_elementwise(self, func):
+        """
+        Applies the given function 'func' element-wise to the gergen.
+        """
+        if self.__veri is None:
+            raise ValueError("Cannot apply the function to an empty gergen.")
+        
+        def apply_recursive(data):
+            if isinstance(data, list):
+                return [apply_recursive(subdata) for subdata in data]
+            else:
+                if func == math.tan and data == math.pi / 2:
+                    raise ValueError("Cannot calculate the tangent of pi/2.")
+                elif func == math.log10 and data <= 0:
+                    raise ValueError("Cannot calculate the logarithm of a non-positive number.")
+                elif func == math.log and data <= 0:
+                    raise ValueError("Cannot calculate the natural logarithm of a non-positive number.")
+                return func(data)
+            
+        new_data = apply_recursive(self.__veri)
+        return gergen(new_data)
 
     def sin(self):
         """
         Calculates the sine of each element in the given gergen.
         """
-        pass
+        return self.__apply_elementwise(math.sin)
 
     def cos(self):
         """
         Calculates the cosine of each element in the given gergen.
         """
-        pass
+        return self.__apply_elementwise(math.cos)
 
     def tan(self):
         """
         Calculates the tangent of each element in the given gergen.
         """
-        pass
+        return self.__apply_elementwise(math.tan)
 
     def us(self, n: int):
         """
         Raises each element of the gergen object to the power 'n'. This is an element-wise operation.
         """
-        pass
-
+        if self.__veri is None:
+            raise ValueError("Cannot raise an empty gergen to a power.")
+        
+        if n < 0:
+            raise ValueError("Cannot raise a gergen to a negative power.")
+        
+        def apply_recursive(data):
+            if isinstance(data, list):
+                return [apply_recursive(subdata) for subdata in data]
+            else:
+                if data == 0 and n == 0:
+                    raise ValueError("Cannot raise 0 to the power 0.")
+                return data ** n
+            
+        new_data = apply_recursive(self.__veri)
+        return gergen(new_data)
+        
     def log(self):
         """
         Applies the logarithm function to each element of the gergen object, using the base 10.
         """
-        pass
+        return self.__apply_elementwise(math.log10)
 
     def ln(self):
         """
         Applies the natural logarithm function to each element of the gergen object.
         """
-        pass
+        return self.__apply_elementwise(math.log)
 
     def L1(self):
         """
-        Calculates and returns the L1 norm.
+        Calculates the L1 norm. The L1 norm, also known as the
+        Manhattan norm, is the sum of the absolute values of
+        the elements in the tensor.
         """
-        pass
+        return self.Lp(1) # L1 norm is a special case of Lp norm
 
     def L2(self):
         """
-        Calculates and returns the L2 norm.
+        Calculates the L2 norm or the Euclidean norm, which is the
+        square root of the sum of the squares of the tensor’s elements.
         """
-        pass
+        return self.Lp(2) # L2 norm is a special case of Lp norm
 
     def Lp(self, p):
         """
-        Calculates and returns the Lp norm, where p should be a positive integer.
+        Calculates Lp norm, which is general version of L1 and L2 
+        norms by calculating each element to the power of p,
+        summing these values, and then taking the p-th root of the result.
         """
-        pass
+        if self.__veri is None:
+            raise ValueError("Cannot calculate the Lp norm of an empty gergen.")
+        
+        if p <= 0:
+            raise ValueError("p must be a positive number.")
+        
+        # Recursive function to calculate the Lp norm
+        def calculate_lp(data):
+            if isinstance(data, list):
+                return math.pow(sum(calculate_lp(subdata) ** p for subdata in data), 1 / p)
+            else:
+                return data ** p
+            
+        return calculate_lp(self.__veri)
 
     def listeye(self):
         """
         Converts the gergen object into a list or a nested list, depending on its dimensions.
         """
-        pass
+        return self.__veri
 
     def duzlestir(self):
         """
-        Converts the gergen object's multi-dimensional structure into a 1D structure, effectively 'flattening' the object.
+        Converts the gergen object's multi-dimensional structure into a 1D structure, 
+        effectively 'flattening' the object.
         """
-        pass
-
+        if self.__veri is None:
+            raise ValueError("Cannot flatten an empty gergen.")
+        
+        # Recursive function to flatten the gergen
+        def flatten(data):
+            if isinstance(data, list):
+                return [item for sublist in data for item in flatten(sublist)]
+            else:
+                return [data]
+            
+        new_data = flatten(self.__veri)
+        return gergen(new_data)
+        
     def boyutlandir(self, yeni_boyut):
         """
         Reshapes the gergen object to a new shape 'yeni_boyut', which is specified as a tuple.
         """
-        pass
 
     def ic_carpim(self, other):
         """
@@ -508,21 +593,86 @@ class gergen:
     
     def topla(self, eksen=None):
         """
-        Sums up the elements of the gergen object, optionally along a specified axis 'eksen'.
+        Sums up values in the gergen. If eksen is None, all elements are added.
+        If eksen is not None, performs the summation along the specified axis.
         """
-        pass
+        if self.__veri is None:
+            raise ValueError("Cannot sum up elements of an empty gergen.")
 
+        # Check if eksen is valid
+        if eksen not in (None, 0, 1):
+            raise TypeError("eksen must be None, 0, or 1.")
+
+        # Global summation
+        if eksen is None:
+            return sum(self.duzlestir().__veri)
+
+        # Axis-specific summation
+        def sum_axis(data, axis): # 0 means (3x3x2x3)
+            if axis == 0:
+                pass
+                
+
+        summed_data = sum_axis(self.__veri, eksen)
+
+        # For axis-specific summation, the result should be wrapped in a gergen
+        return gergen(summed_data)
+        
     def ortalama(self, eksen=None):
         """
-        Calculates the average of the elements of the gergen object, optionally along a specified axis 'eksen'.
+        Computes the average of elements in the tensor, with the option to compute
+        this average across different axes of the tensor based on the eksen parameter.
         """
-        pass
+        if self.__veri is None:
+            raise ValueError("Cannot calculate the average of an empty gergen.")
+
+        # Check if eksen is valid
+        if eksen not in (None, 0, 1):
+            raise TypeError("eksen must be an integer or None.")
+
+        # Global average
+        if eksen is None:
+            total_sum = self.topla(eksen=None)
+            num_elements = self.uzunluk()
+            return total_sum / num_elements if num_elements > 0 else 0
+
+        # Verify dimensions for axis-specific average
+        if eksen < 0 or eksen >= len(self.__boyut):
+            raise ValueError("Specified eksen is out of bounds.")
+
+        # Axis-specific average
+        def avg_axis(data, axis, depth=0):
+            if depth == axis:
+                # We are at the axis to average over
+                if isinstance(data[0], list):
+                    # Average each sublist recursively and return as gergen
+                    averaged = [sum(item) / len(item) for item in zip(*data)]
+                    return averaged
+                else:
+                    # Base case: directly average the elements at this level
+                    return sum(data) / len(data) if data else 0
+            else:
+                # Not yet at the axis, recurse deeper
+                return [avg_axis(item, axis, depth + 1) for item in data]
+
+        averaged_data = avg_axis(self.__veri, eksen)
+
+        # For axis-specific average, the result should be wrapped in a gergen
+        return gergen(averaged_data)
 
 def main():
     # a main function to test the functions
 
     cekirdek(2)
-    g = rastgele_dogal((3, 3, 2, 4))
+    # g = rastgele_dogal((3,1,2,3))
+    # g2 = rastgele_gercek((3, 3, 2, 4))
+    # print(g)
+
+    # g = gergen([1, 2, 3])
+    # print(g.duzlestir().boyut())
+    # print()
+    # print(g.listeye())
+    # print()
     # print(g)
 
     ### test the random number generators
@@ -699,6 +849,159 @@ def main():
     # print(gg3)      
 
     ### test the __sub__ method
+
+    ## subtract two scalars
+    # gs1 = gergen(2)
+    # gs2 = gs1 - 3
+    # print(gs2)
+    # gs3 = gs1 - gs2
+    # print(gs3)
+
+    ## subtract a scalar from a gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6]])
+    # gs = g - 2
+    # print(gs)
+
+    ## subtract two gergens
+    # ga = gergen([[1, 2, 3], [4, 5, 6]])
+    # gb = gergen([[7, 8, 9], [10, 11, 12]])
+    # gc = ga - gb
+    # print(gc) # [[-6, -6, -6], [-6, -6, -6]]
+
+    ## subtract 2 1x1 gergens
+    # g11 = gergen([1])
+    # g12 = gergen([4])
+    # g13 = g11 - g12
+    # print(g13)
+
+    ## subtract 2 1x3 gergens
+    # g21 = gergen([1, 2, 3])
+    # g22 = gergen([4, 5, 6])
+    # g23 = g21 - g22
+    # print(g23) # [[-3, -3, -3]]
+
+    ## subtract 2 2x1 gergens
+    # g211 = gergen([[1], [2]])
+    # g212 = gergen([[3], [4]])
+    # g213 = g211 - g212
+    # print(g213) # [[-2] \n [-2]]
+
+    ## subtract 1x1 and 1x3 gergens - ValueError: Cannot subtract gergens with different dimensions.
+    # g11 = gergen([1])
+    # g13 = gergen([4, 5, 6])
+    # g113 = g11 - g13
+    # print(g113)
+
+    ## subtract 1x2 and 2x1 gergens - ValueError: Cannot subtract gergens with different dimensions.
+    # g21 = gergen([1, 2])
+    # g212 = gergen([[3], [4]])
+    # g213 = g21 - g212
+    # print(g213)
+
+    ## subtract scalar from 5x3x1x2 gergen
+    # g53 = rastgele_dogal((5, 3, 1, 2))
+    # print(g53)
+    # print()
+    # gs53 = g53 - 2
+    # print(gs53)
+
+    ## subtract 3x3x2x1 and 3x3x2x1 gergens
+    # gg1 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
+    # gg2 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
+    # gg3 = gg1 - gg2
+    # print(gg3)
+
+    ### test the uzunluk method
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.uzunluk()) # ValueError: Cannot get the length of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([1])
+    # print(g.uzunluk()) # 1
+
+    # gl = gergen([[1, 2, 3], [4, 5, 6]])
+    # print(gl.uzunluk()) # 6
+
+    # gll = gergen([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])
+    # print(gll.uzunluk()) # 12
+
+    # glong = rastgele_dogal((5, 3, 1, 2, 4, 9))
+    # print(glong.uzunluk()) # 1080
+
+    # garr = gergen([1,2,3,4,5])
+    # print(garr.uzunluk()) # 5
+
+    ### test the boyut method
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.boyut()) # ValueError: Cannot get the shape of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.boyut()) # (1,1)
+
+    ### test the devrik method
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.devrik()) # ValueError: Cannot get the transpose of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.devrik()) # 10
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.devrik()) # [[1] \n [2] \n [3]]
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.devrik()) # [[1, 2, 3]]
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.devrik()) # [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g)
+    # print()
+    # print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
+    # print()
+    # print(np.array([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]]).transpose())
+
+    ### test the sin, cos, tan methods
+
+    ### test the us method
+
+    ### test the log methods
+
+    ### test the L1, L2, Lp methods
+
+    ### test the listeye method
+
+    ### test the duzlestir method
+
+    ### test the boyutlandir method
+
+    ### test the ic_carpim method
+
+    ### test the dis_carpim method
+
+    ### test the topla method
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.topla()) # ValueError: Cannot sum up elements of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([3,1,2])
+    # print(g.topla(0)) # 3
+
+    ### test the ortalama method
     
 
 
