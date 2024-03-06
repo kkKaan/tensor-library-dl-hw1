@@ -433,13 +433,39 @@ class gergen:
         if isinstance(self.__veri, (int, float)) or self.boyut() == (1,1):
             return self
         
-        def transpose(data):
-            if not isinstance(data[0], list):
-                return data
-            return list(map(list, zip(*[transpose(sublist) for sublist in data])))
+        if self.boyut()[0] == 1 and len(self.boyut()) == 2:
+            return gergen([[item] for item in self.__veri])
+        elif self.boyut()[1] == 1 and len(self.boyut()) == 2:
+            return gergen([item[0] for item in self.__veri])
         
+        def transpose(data):
+            if not data or not isinstance(data, list):
+                # Base case: data is not a list or is empty, return as is.
+                return data
+            if all(not isinstance(i, list) for i in data):
+                # If the data is a 1D list, simply return it.
+                return data
+            transposed_data = recursive_reverse(data)
+            return transposed_data
+
+        def recursive_reverse(data):
+            if isinstance(data[0], list):
+                # Reverse the order at the current depth and apply recursively.
+                reversed_sublists = [recursive_reverse(sublist) for sublist in data]
+                return list(map(list, zip(*reversed_sublists)))
+            else:
+                # We've hit the deepest level of nesting, return the reversed data.
+                return data
+
+        # def recursive_reverse(data):
+        #     if isinstance(data, list):
+        #         # Assuming non-empty lists
+        #         return [recursive_reverse(sublist) for sublist in zip(*data)]
+        #     return data
+            
         new_data = transpose(self.__veri)
         return gergen(new_data)
+
 
     def __apply_elementwise(self, func):
         """
@@ -578,6 +604,25 @@ class gergen:
         """
         Reshapes the gergen object to a new shape 'yeni_boyut', which is specified as a tuple.
         """
+        if self.__veri is None:
+            raise ValueError("Cannot reshape an empty gergen.")
+        
+        yeni_uzunluk = 1
+        for boyut in yeni_boyut:
+            yeni_uzunluk *= boyut
+
+        if yeni_uzunluk != self.uzunluk():
+            raise ValueError("Total size of new gergen must be unchanged.")
+
+        duz = self.duzlestir().listeye()
+
+        def build_structure(data, dims):
+            if len(dims) == 0:
+                return data.pop(0)
+            return [build_structure(data, dims[1:]) for _ in range(dims[0])]
+        
+        new_data = build_structure(duz, list(yeni_boyut))
+        return gergen(new_data)   
 
     def ic_carpim(self, other):
         """
@@ -955,10 +1000,14 @@ def main():
 
     ## 1x3 gergen
     # g = gergen([1, 2, 3])
+    # print(g)
+    # print()
     # print(g.devrik()) # [[1] \n [2] \n [3]]
 
     ## 3x1 gergen
     # g = gergen([[1], [2], [3]])
+    # print(g)
+    # print()
     # print(g.devrik()) # [[1, 2, 3]]
 
     ## 3x3 gergen
@@ -970,8 +1019,13 @@ def main():
     # print(g)
     # print()
     # print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
-    # print()
-    # print(np.array([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]]).transpose())
+    # print("--------------------")
+    # arr = np.array([[[1, 2], [3, 4], [5, 6]],
+    #                 [[7, 8], [9, 10], [11, 12]],
+    #                 [[13, 14], [15, 16], [17, 18]]])
+    # print(arr.transpose())
+    # print(arr.transpose().shape)
+
 
     ### test the sin, cos, tan methods
 
@@ -985,7 +1039,31 @@ def main():
 
     ### test the duzlestir method
 
+    ## some 3d gergen
+    # g = gergen([[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]])
+    # print(g)
+    # print()
+    # print(g.duzlestir()) # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
     ### test the boyutlandir method
+
+    ## 2x3x3 gergen to 3x2x3
+    # g = rastgele_dogal((2, 3, 3))
+    # print(g)
+    # print()
+    # print(g.boyutlandir((3, 2, 3)))
+
+    ## 2x3x3 gergen to 9x2 gergen
+    # g = rastgele_dogal((2, 3, 3))
+    # print(g)
+    # print()
+    # print(g.boyutlandir((9, 2)))
+
+    ## 2x3x3 gergen to 1x18 gergen
+    # g = rastgele_dogal((2, 3, 3))
+    # print(g)
+    # print()
+    # print(g.boyutlandir((1, 18)))
 
     ### test the ic_carpim method
 
