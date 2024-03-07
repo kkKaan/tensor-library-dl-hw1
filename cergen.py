@@ -1,6 +1,6 @@
 import random
 import math
-# import numpy as np
+import numpy as np
 from typing import Union
 
 def cekirdek(sayi: int):
@@ -437,25 +437,6 @@ class gergen:
             return gergen([[item] for item in self.__veri])
         elif self.boyut()[1] == 1 and len(self.boyut()) == 2:
             return gergen([item[0] for item in self.__veri])
-        
-        # def transpose(data):
-        #     if not data or not isinstance(data, list):
-        #         # Base case: data is not a list or is empty, return as is.
-        #         return data
-        #     if all(not isinstance(i, list) for i in data):
-        #         # If the data is a 1D list, simply return it.
-        #         return data
-        #     transposed_data = recursive_reverse(data)
-        #     return transposed_data
-
-        # def recursive_reverse(data):
-        #     if isinstance(data[0], list):
-        #         # Reverse the order at the current depth and apply recursively.
-        #         reversed_sublists = [recursive_reverse(sublist) for sublist in data]
-        #         return list(map(list, zip(*reversed_sublists)))
-        #     else:
-        #         # We've hit the deepest level of nesting, return the reversed data.
-        #         return data
 
         ### for each element in the indices i j k l should be now in l k j i
         # write all possible indices for self.__veri
@@ -471,11 +452,9 @@ class gergen:
 
         # apply the indices to the new_data
         old_indices = list(indices(self.boyut()))
-        # print(old_indices)
-        # print()
+
         # find new indices by reversing all of the elements on old_indices
         new_indices = [idx[::-1] for idx in old_indices]
-        # print(new_indices)
         
         # Initialize new_data with the same structure as self.__veri but empty
         new_data = self.boyutlandir(self.boyut()[::-1]).listeye()
@@ -513,7 +492,7 @@ class gergen:
                     raise ValueError("Cannot calculate the logarithm of a non-positive number.")
                 elif func == math.log and data <= 0:
                     raise ValueError("Cannot calculate the natural logarithm of a non-positive number.")
-                return func(data)
+                return 0 if abs(func(data)) < 1e-8 else func(data)
             
         new_data = apply_recursive(self.__veri)
         return gergen(new_data)
@@ -596,12 +575,17 @@ class gergen:
         if p <= 0:
             raise ValueError("p must be a positive number.")
         
+        if isinstance(self.__veri, (int, float)):
+            return math.pow((self.__veri ** p), 1 / p)
+        elif self.boyut() == (1,1):
+            return math.pow((self.__veri[0] ** p), 1 / p)
+        
         # Recursive function to calculate the Lp norm
         def calculate_lp(data):
             if isinstance(data, list):
                 return math.pow(sum(calculate_lp(subdata) ** p for subdata in data), 1 / p)
             else:
-                return data ** p
+                return data
             
         return calculate_lp(self.__veri)
 
@@ -686,7 +670,6 @@ class gergen:
             if axis == 0:
                 pass
                 
-
         summed_data = sum_axis(self.__veri, eksen)
 
         # For axis-specific summation, the result should be wrapped in a gergen
@@ -1049,7 +1032,7 @@ def main():
     # print()
     # print(g.boyutlandir((2,3,3)))
     # print()
-    # print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
+    # print(g.devrik()) 
     # print("--------------------")
     # arr = np.array([[[1, 2], [3, 4], [5, 6]],
     #                 [[7, 8], [9, 10], [11, 12]],
@@ -1057,27 +1040,200 @@ def main():
     # print(arr.transpose().shape)
     # print(arr.transpose())
 
+    ## 3x4x2x5 gergen
+    # g = rastgele_dogal((3, 4, 2, 5))
+    # print(g)
+    # print()
+    # print(g.devrik())
     # print("--------------------")
-
-    # ## 3x4x2x5 gergen
-    g = rastgele_dogal((3, 4, 2, 5))
-    print(g)
-    print()
-    print(g.devrik())
     # arr = np.array(g.listeye())
     # print(arr.transpose().shape)
     # print(arr.transpose())
 
-
     ### test the sin, cos, tan methods
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.sin()) # ValueError: Cannot apply the function to an empty gergen.
+    # print(g.cos()) # ValueError: Cannot apply the function to an empty gergen.
+    # print(g.tan()) # ValueError: Cannot apply the function to an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([math.pi / 2])
+    # print(g.sin()) # 1.0
+    # print(g.cos()) # 0.0
+    # print(g.tan()) # err
+
+    ## 1x3 gergen
+    # g = gergen([math.pi / 6, math.pi / 3, math.pi / 4])
+    # print(g.sin()) 
+    # print(g.cos()) 
+    # print(g.tan()) 
+
+    ## 3x1 gergen
+    # g = gergen([[math.pi / 6], [math.pi / 3], [math.pi / 4]])
+    # print(g.sin()) # [[0.5], [0.8660254037844386], [0.7071067811865475]]
+    # print(g.cos()) # [[0.8660254037844386], [0.5], [0.7071067811865475]]
+    # print(g.tan()) # [[0.5773502691896257], [1.7320508075688774], [0.9999999999999999]]
+
+    ## 3x3 gergen
+    # g = gergen([[math.pi / 6, math.pi / 3, math.pi / 4], [math.pi / 6, math.pi / 3, math.pi / 4], [math.pi / 6, math.pi / 3, math.pi / 4]])
+    # print(g.sin()) 
+    # print(g.cos())
+    # print(g.tan())
+
+    ## 3x3x2 gergen
+    # g = gergen([[[math.pi / 6, math.pi / 3], [math.pi / 4, math.pi / 6], [math.pi / 3, math.pi / 4]], [[math.pi / 6, math.pi / 3], [math.pi / 4, math.pi / 6], [math.pi / 3, math.pi / 4]], [[math.pi / 6, math.pi / 3], [math.pi / 4, math.pi / 6], [math.pi / 3, math.pi / 4]]])
+    # print(g.sin())
+    # print(g.cos())
+    # print(g.tan())
 
     ### test the us method
 
+    ## empty gergen
+    # g = gergen()
+    # print(g.us(2)) # ValueError: Cannot raise an empty gergen to a power.
+
+    ## scalar gergen
+    # g = gergen(3)
+    # print(g.us(2)) # 9
+
+    # g = gergen(0)
+    # print(g.us(0)) # err
+
+    ## 1x1 gergen
+    # g = gergen([3])
+    # print(g.us(2)) # 9
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.us(2)) # [1, 4, 9]
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.us(2)) # [[1], [4], [9]]
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.us(2)) # [[1, 4, 9], [16, 25, 36], [49, 64, 81]]
+
+    ## 3x3 gergen with -
+    # g = gergen([[4, 4, 4], [4, 4, 4], [4, 4, 4]])
+    # print(g.us(-1)) # err
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.us(2))
+
+    ## 3x5x3x2 gergen with 0
+    # g = gergen([[[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]], [[19, 20], [21, 22], [23, 24]], [[25, 26], [27, 28], [29, 30]]], [[[31, 32], [33, 34], [35, 36]], [[37, 38], [39, 40], [41, 42]], [[43, 44], [45, 46], [47, 48]], [[49, 50], [51, 52], [53, 54]], [[55, 56], [57, 58], [59, 60]]], [[[61, 62], [63, 64], [65, 66]], [[67, 68], [69, 70], [71, 72]], [[73, 74], [75, 76], [77, 78]], [[79, 80], [81, 82], [83, 84]], [[85, 86], [87, 88], [89, 90]]]])
+    # print(g.us(0))
+
     ### test the log methods
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.log()) # ValueError: Cannot calculate the logarithm of an empty gergen.
+    # print(g.ln()) # ValueError: Cannot calculate the natural logarithm of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.log()) # 1.0
+    # print(g.ln()) # 2.302585092994046
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.log()) # 1.0
+    # print(g.ln()) # 2.302585092994046
+
+    # g = gergen(0)
+    # print(g.log()) # err
+    # print(g.ln()) # err
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.log()) # [0.0, 0.3010299956639812, 0.47712125471966244]
+    # print(g.ln()) # [0.0, 0.6931471805599453, 1.0986122886681098]
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.log()) # [[0.0], [0.3010299956639812], [0.47712125471966244]]
+    # print(g.ln()) # [[0.0], [0.6931471805599453], [1.0986122886681098]]
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.log()) # [[0.0, 0.3010299956639812, 0.47712125471966244], [0.6020599913279624, 0.6989700043360189, 0.7781512503836436], [0.8450980400142568, 0.9030899869919435, 0.9542425094393249]]
+    # print(g.ln()) # [[0.0, 0.6931471805599453, 1.0986122886681098], [1.3862943611198906, 1.6094379124341003, 1.791759469228055], [1.9459101490553132, 2.0794415416798357, 2.1972245773362196]]
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.log())
+    # print(g.ln())
 
     ### test the L1, L2, Lp methods
 
-    ### test the listeye method
+    ## empty gergen
+    # g = gergen()
+    # print(g.L1()) # ValueError: Cannot calculate the L1 norm of an empty gergen.
+    # print(g.L2()) # ValueError: Cannot calculate the L2 norm of an empty gergen.
+    # print(g.Lp(3)) # ValueError: Cannot calculate the Lp norm of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.L1()) # 10
+    # print(g.L2()) # 10.0
+    # print()
+    # print(g.Lp(1)) # 10
+    # print(g.Lp(2)) # 10.0
+    # print(g.Lp(3)) # 10.0
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.L1()) # 10
+    # print(g.L2()) # 10.0
+    # print()
+    # print(g.Lp(1)) # 10
+    # print(g.Lp(2)) # 10.0
+    # print(g.Lp(3)) # 10.0
+
+    # print(g.Lp(0)) # ValueError: p must be a positive number.
+    # print(g.Lp(-1)) # ValueError: p must be a positive number.
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.L1()) # 6
+    # print(g.L2()) # 3.7416573867739413
+    # print()
+    # print(g.Lp(1)) # 6
+    # print(g.Lp(2)) # 3.7416573867739413
+    # print(g.Lp(3)) # 3.3019272488946263
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.L1()) # 6
+    # print(g.L2()) # 3.7416573867739413
+    # print()
+    # print(g.Lp(1)) # 6
+    # print(g.Lp(2)) # 3.7416573867739413
+    # print(g.Lp(3)) # 3.3019272488946263
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.L1()) # 45
+    # print(g.L2()) # 16.881943016134134
+    # print()
+    # print(g.Lp(1)) # 45
+    # print(g.Lp(2)) # 16.881943016134134
+    # print(g.Lp(3)) # 
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.L1())
+    # print(g.L2())
+    # print()
+    # print(g.Lp(1))
+    # print(g.Lp(2))
+    # print(g.Lp(3))
 
     ### test the duzlestir method
 
