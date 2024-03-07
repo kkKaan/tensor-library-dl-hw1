@@ -209,7 +209,7 @@ class gergen:
         resulting in the display of the tensor’s boyut followed by its veri.
         """
         if self.__veri is None:
-            return 'bos gergen'
+            return '[]'
         elif isinstance(self.__veri, (int, float)):
             return f'0 boyutlu skaler gergen:\n{self.__veri}'
         else:
@@ -438,34 +438,38 @@ class gergen:
         elif self.boyut()[1] == 1 and len(self.boyut()) == 2:
             return gergen([item[0] for item in self.__veri])
         
-        def transpose(data):
-            if not data or not isinstance(data, list):
-                # Base case: data is not a list or is empty, return as is.
-                return data
-            if all(not isinstance(i, list) for i in data):
-                # If the data is a 1D list, simply return it.
-                return data
-            transposed_data = recursive_reverse(data)
-            return transposed_data
-
-        def recursive_reverse(data):
-            if isinstance(data[0], list):
-                # Reverse the order at the current depth and apply recursively.
-                reversed_sublists = [recursive_reverse(sublist) for sublist in data]
-                return list(map(list, zip(*reversed_sublists)))
-            else:
-                # We've hit the deepest level of nesting, return the reversed data.
-                return data
+        # def transpose(data):
+        #     if not data or not isinstance(data, list):
+        #         # Base case: data is not a list or is empty, return as is.
+        #         return data
+        #     if all(not isinstance(i, list) for i in data):
+        #         # If the data is a 1D list, simply return it.
+        #         return data
+        #     transposed_data = recursive_reverse(data)
+        #     return transposed_data
 
         # def recursive_reverse(data):
-        #     if isinstance(data, list):
-        #         # Assuming non-empty lists
-        #         return [recursive_reverse(sublist) for sublist in zip(*data)]
-        #     return data
-            
-        new_data = transpose(self.__veri)
-        return gergen(new_data)
+        #     if isinstance(data[0], list):
+        #         # Reverse the order at the current depth and apply recursively.
+        #         reversed_sublists = [recursive_reverse(sublist) for sublist in data]
+        #         return list(map(list, zip(*reversed_sublists)))
+        #     else:
+        #         # We've hit the deepest level of nesting, return the reversed data.
+        #         return data
 
+        # # for each element in the indices i j k l should be now in l k j i
+        new_data = self.boyutlandir(self.boyut()[::-1])
+
+        print(new_data)
+
+        # # traverse self.__veri recursively and equalize the element on i j k l on veri to l k j i on new_data
+        # def traverse(data, new_data):
+
+        # Reshape new_data to the reversed dimensions of the original data
+        
+
+
+        # return gergen(new_data)
 
     def __apply_elementwise(self, func):
         """
@@ -1015,16 +1019,28 @@ def main():
     # print(g.devrik()) # [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
 
     ## 3x3x2 gergen
-    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
-    # print(g)
-    # print()
-    # print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
+    g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    print(g)
+    print()
+    print(g.boyutlandir((2,3,3)))
+    print()
+    print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
     # print("--------------------")
     # arr = np.array([[[1, 2], [3, 4], [5, 6]],
     #                 [[7, 8], [9, 10], [11, 12]],
     #                 [[13, 14], [15, 16], [17, 18]]])
-    # print(arr.transpose())
     # print(arr.transpose().shape)
+    # print(arr.transpose())
+
+    # print("--------------------")
+
+    # ## 3x4x2x5 gergen
+    # g = rastgele_dogal((3, 4, 2, 5))
+    # print(g)
+    # print()
+    # arr = np.array(g.listeye())
+    # print(arr.transpose().shape)
+    # print(arr.transpose())
 
 
     ### test the sin, cos, tan methods
@@ -1064,6 +1080,12 @@ def main():
     # print(g)
     # print()
     # print(g.boyutlandir((1, 18)))
+
+    ## 2x3x3 gergen to 18x1 gergen
+    # g = rastgele_dogal((2, 3, 3))
+    # print(g)
+    # print()
+    # print(g.boyutlandir((18, 1)))
 
     ### test the ic_carpim method
 
