@@ -1,6 +1,6 @@
 import random
 import math
-import numpy as np
+# import numpy as np
 from typing import Union
 
 def cekirdek(sayi: int):
@@ -457,19 +457,44 @@ class gergen:
         #         # We've hit the deepest level of nesting, return the reversed data.
         #         return data
 
-        # # for each element in the indices i j k l should be now in l k j i
-        new_data = self.boyutlandir(self.boyut()[::-1])
+        ### for each element in the indices i j k l should be now in l k j i
+        # write all possible indices for self.__veri
+        def indices(dimensions, idx=[]):
+            """
+            Generates all possible indices for given dimensions.
+            """
+            if not dimensions:
+                yield idx
+                return
+            for i in range(dimensions[0]):
+                yield from indices(dimensions[1:], idx + [i,])
 
-        print(new_data)
-
-        # # traverse self.__veri recursively and equalize the element on i j k l on veri to l k j i on new_data
-        # def traverse(data, new_data):
-
-        # Reshape new_data to the reversed dimensions of the original data
+        # apply the indices to the new_data
+        old_indices = list(indices(self.boyut()))
+        # print(old_indices)
+        # print()
+        # find new indices by reversing all of the elements on old_indices
+        new_indices = [idx[::-1] for idx in old_indices]
+        # print(new_indices)
         
-
-
-        # return gergen(new_data)
+        # Initialize new_data with the same structure as self.__veri but empty
+        new_data = self.boyutlandir(self.boyut()[::-1]).listeye()
+        
+        # Function to get/set values in a nested list using a tuple index
+        def getset_nested(data, idx, value=None, set_value=False):
+            for i in idx[:-1]:
+                data = data[i]
+            if set_value:
+                data[idx[-1]] = value
+            else:
+                return data[idx[-1]]
+        
+        # Reassign elements from old to new positions
+        for old_idx, new_idx in zip(old_indices, new_indices):
+            value = getset_nested(self.__veri, tuple(old_idx))
+            getset_nested(new_data, new_idx, value, True)
+        
+        return gergen(new_data)
 
     def __apply_elementwise(self, func):
         """
@@ -1019,12 +1044,12 @@ def main():
     # print(g.devrik()) # [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
 
     ## 3x3x2 gergen
-    g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
-    print(g)
-    print()
-    print(g.boyutlandir((2,3,3)))
-    print()
-    print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g)
+    # print()
+    # print(g.boyutlandir((2,3,3)))
+    # print()
+    # print(g.devrik()) # [[[1, 7, 13], [2, 8, 14]], [[3, 9, 15], [4, 10, 16]], [[5, 11, 17], [6, 12, 18]]]
     # print("--------------------")
     # arr = np.array([[[1, 2], [3, 4], [5, 6]],
     #                 [[7, 8], [9, 10], [11, 12]],
@@ -1035,9 +1060,10 @@ def main():
     # print("--------------------")
 
     # ## 3x4x2x5 gergen
-    # g = rastgele_dogal((3, 4, 2, 5))
-    # print(g)
-    # print()
+    g = rastgele_dogal((3, 4, 2, 5))
+    print(g)
+    print()
+    print(g.devrik())
     # arr = np.array(g.listeye())
     # print(arr.transpose().shape)
     # print(arr.transpose())
