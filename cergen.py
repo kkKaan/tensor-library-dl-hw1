@@ -1,6 +1,6 @@
 import random
 import math
-import numpy as np
+# import numpy as np
 from typing import Union
 
 def cekirdek(sayi: int):
@@ -603,6 +603,9 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot flatten an empty gergen.")
         
+        if isinstance(self.__veri, (int, float)): # ??????
+            return gergen(self.__veri)
+        
         # Recursive function to flatten the gergen
         def flatten(data):
             if isinstance(data, list):
@@ -612,6 +615,9 @@ class gergen:
             
         new_data = flatten(self.__veri)
         return gergen(new_data)
+        # Change the current gergen to a 1D gergen and return it
+
+        
         
     def boyutlandir(self, yeni_boyut):
         """
@@ -626,6 +632,9 @@ class gergen:
 
         if yeni_uzunluk != self.uzunluk():
             raise ValueError("Total size of new gergen must be unchanged.")
+        
+        if isinstance(self.__veri, (int, float)):
+            return gergen([self.__veri])
 
         duz = self.duzlestir().listeye()
 
@@ -1237,6 +1246,38 @@ def main():
 
     ### test the duzlestir method
 
+    ## empty gergen
+    # g = gergen()    
+    # print(g.duzlestir()) # ValueError: Cannot flatten an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.duzlestir()) # [10]
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.duzlestir()) # [10]
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.duzlestir()) # [1, 2, 3]
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.duzlestir()) # [1, 2, 3]
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.duzlestir()) # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.duzlestir()) # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+
+    ## 3x5x3x2 gergen
+    # g = rastgele_dogal((3, 5, 3, 2))
+    # print(g.duzlestir())
+
     ## some 3d gergen
     # g = gergen([[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]])
     # print(g)
@@ -1244,6 +1285,40 @@ def main():
     # print(g.duzlestir()) # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     ### test the boyutlandir method
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.boyutlandir((1, 1))) # ValueError: Cannot reshape an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.boyutlandir((1, 1))) # [[10]]
+    # print(g.boyutlandir((1, 2))) # ValueError: Cannot reshape a gergen to a different size.
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.boyutlandir((1, 1)))
+    # print(g.boyutlandir((1, 1, 5))) # ValueError: Cannot reshape a gergen to a different size.
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.boyutlandir((3, 1))) # [[1] \n [2] \n [3]]
+    # print(g.boyutlandir((1, 3))) # [[1, 2, 3]]
+    # print(g.boyutlandir((3, 1, 1, 1, 6))) # ValueError: Cannot reshape a gergen to a different size.
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.boyutlandir((1, 3))) # [[1, 2, 3]]
+    # print(g.boyutlandir((3, 1))) # [[1] \n [2] \n [3]]
+    # print(g.boyutlandir((1, 1, 3, 1, 1))) 
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.boyutlandir((1, 9))) # [[1, 2, 3, 4, 5, 6, 7, 8, 9]]
+    # print(g.boyutlandir((9, 1))) # [[1] \n [2] \n [3] \n [4] \n [5] \n [6] \n [7] \n [8] \n [9]]
+    # print(g.boyutlandir((3, 3))) # [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    # print(g.boyutlandir((3, 1, 1, 3, 1)))
+    # print(g.boyutlandir((1, 3, 1, 1, 3, 1, 1, 2))) # ValueError: Cannot reshape a gergen to a different size.
 
     ## 2x3x3 gergen to 3x2x3
     # g = rastgele_dogal((2, 3, 3))
