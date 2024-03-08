@@ -1,6 +1,6 @@
 import random
 import math
-# import numpy as np
+import numpy as np
 from typing import Union
 
 def cekirdek(sayi: int):
@@ -614,10 +614,7 @@ class gergen:
                 return [data]
             
         new_data = flatten(self.__veri)
-        return gergen(new_data)
-        # Change the current gergen to a 1D gergen and return it
-
-        
+        return gergen(new_data)        
         
     def boyutlandir(self, yeni_boyut):
         """
@@ -644,19 +641,50 @@ class gergen:
             return [build_structure(data, dims[1:]) for _ in range(dims[0])]
         
         new_data = build_structure(duz, list(yeni_boyut))
-        return gergen(new_data)   
+        return gergen(new_data)  
 
     def ic_carpim(self, other):
         """
         Calculates the inner (dot) product of this gergen object with another.
         """
-        pass
+        if self.__veri is None or other.__veri is None:
+            raise ValueError("Cannot calculate the inner product of an empty gergen.")
+        elif (len(self.__boyut) != 2 and self.__boyut != ()) or (len(other.__boyut) != 2 and other.__boyut != ()):
+            raise ValueError("Inner product is only defined for 1D or 2D gergens.")
+        
+        # Scalar case
+        if isinstance(self.__veri, (int, float)) and isinstance(other.__veri, (int, float)):
+            return self.__veri * other.__veri
+        
+        if self.boyut()[0] == 1:
+            if self.boyut() != other.boyut():
+                raise ValueError("Cannot calculate the inner product of 1D gergens with different dimensions.")
+            
+            return sum([self.__veri[i] * other.__veri[i] for i in range(self.boyut()[1])])
+        else:
+            if self.boyut()[1] != other.boyut()[0]:
+                raise ValueError("Cannot calculate the inner product of 2D gergens with incompatible dimensions.")
+            
+            # Transpose the first gergen and perform matrix multiplication
+            return self.devrik() * other
 
     def dis_carpim(self, other):
         """
         Calculates the outer product of this gergen object with another.
         """
-        pass
+        # Verifying that the other parameter is a gergen object
+        if not isinstance(other, gergen):
+            raise TypeError("Both operands must be gergen instances.")
+
+        # Ensuring both self.veri and other.veri are vectors (1-D arrays)
+        if not (isinstance(self.__veri, list) and all(isinstance(item, (int, float)) for item in self.__veri)) or \
+           not (isinstance(other.__veri, list) and all(isinstance(item, (int, float)) for item in other.__veri)):
+            raise ValueError("Both operands must be 1-D arrays to compute the outer product.")
+        
+        # Calculate the outer product
+        result = [[self_item * other_item for other_item in other.__veri] for self_item in self.__veri]
+        
+        return gergen(result)
     
     def topla(self, eksen=None):
         """
@@ -730,6 +758,7 @@ def main():
     # a main function to test the functions
 
     cekirdek(2)
+
     # g = rastgele_dogal((3,1,2,3))
     # g2 = rastgele_gercek((3, 3, 2, 4))
     # print(g)
@@ -1346,19 +1375,111 @@ def main():
 
     ### test the ic_carpim method
 
+    ## empty gergen
+    # g = gergen()
+    # print(g.ic_carpim(g)) # ValueError: Cannot calculate the inner product of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.ic_carpim(g)) # 100
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.ic_carpim(g)) # 100
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.ic_carpim(g)) # 14
+
+    ## 3x1 gergen ??????????????????????????
+    # g = gergen([[1], [2], [3]])
+    # print(g.ic_carpim(g)) # 14
+
+    ## 3x3 gergen ??????????????????????????
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.ic_carpim(g)) 
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.dot(arr, arr))
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.ic_carpim(g)) # err
+
     ### test the dis_carpim method
+
+    ## empty gergen
+    # g = gergen()
+    # print(g.dis_carpim(g)) # ValueError: Cannot calculate the outer product of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.dis_carpim(g)) # [[100]]
+
+    ## scalar gergen ??????????????????????????
+    # g = gergen(10)
+    # print(g.dis_carpim(g)) # [[100]]
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.dis_carpim(g)) # [[1, 2, 3], [2, 4, 6], [3, 6, 9]]
+
+    ## 3x1 gergen ??????????????????????????
+    # g = gergen([[1], [2], [3]])
+    # print(g.dis_carpim(g)) # [[1, 2, 3], [2, 4, 6], [3, 6, 9]]
+
+    ## 3x3 gergen 
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.dis_carpim(g)) # err
 
     ### test the topla method
 
     ## empty gergen
     # g = gergen()
     # print(g.topla()) # ValueError: Cannot sum up elements of an empty gergen.
+    # print(g.topla(0)) # ValueError: Cannot sum up elements of an empty gergen. 
 
     ## 1x1 gergen
-    # g = gergen([3,1,2])
+    # g = gergen([3])
+    # print(g.topla()) # 3
     # print(g.topla(0)) # 3
+    # print(g.topla(1)) # 3
+    # print(g.topla(2)) # err ??????????????????????????
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.topla()) # 10
+    # print(g.topla(0)) # 10
+    # print(g.topla(1)) # 10
+    # print(g.topla(2)) # err ??????????????????????????
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.topla()) # 6
+    # print(g.topla(0)) # 6
+    # print(g.topla(1)) # 6
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.topla()) # 6
+    # print(g.topla(0)) # 6
+    # print(g.topla(1)) # 6
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.topla()) # 45
+    # print(g.topla(0)) # 45
+    # print(g.topla(1)) # 45
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.topla())
+    # print(g.topla(0))
+    # print(g.topla(1))
+    # print(g.topla(2))
 
     ### test the ortalama method
+
     
 
 
