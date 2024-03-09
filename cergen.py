@@ -1,6 +1,7 @@
 import random
 import math
 import numpy as np
+import time
 from typing import Union
 
 def cekirdek(sayi: int):
@@ -68,40 +69,10 @@ def rastgele_gercek(boyut, aralik=(0.0, 1.0), dagilim='uniform'):
     
     veri = generate_nested_list_gercek(boyut, aralik)
     return gergen(veri)
-
-class Operation:
-    def __call__(self, *operands):
-        """
-        Makes an instance of the Operation class callable.
-        Stores operands and initializes outputs to None.
-        Invokes the forward pass of the operation with given operands.
-
-        Parameters:
-            *operands: Variable length operand list.
-
-        Returns:
-            The result of the forward pass of the operation.
-        """
-        self.operands = operands
-        self.outputs = None
-        return self.ileri(*operands)
-
-    def ileri(self, *operands):
-        """
-        Defines the forward pass of the operation.
-        Must be implemented by subclasses to perform the actual operation.
-
-        Parameters:
-            *operands: Variable length operand list.
-
-        Raises:
-            NotImplementedError: If not overridden in a subclass.
-        """
-        raise NotImplementedError
     
 class gergen:
     __veri = None # A nested list of numbers representing the data
-    D = None # Transpose of data
+    _D = None # Transpose of data
     __boyut = None # Dimensions of the derivative (Shape)
 
     def __init__(self, veri=None):
@@ -126,9 +97,7 @@ class gergen:
         """
         self.__veri = self.__validate_veri(veri)
         self.__boyut = self.__calculate_boyut(veri)
-        self.D = None  # Placeholder for transpose, which needs its own implementation ###################
-        # print("veri: ", self.__veri)
-        # print("boyut: ", self.__boyut)
+        self._D = None
 
     def __validate_veri(self, veri):
         """
@@ -174,10 +143,9 @@ class gergen:
                     temp = temp[0]
                 boyut.append(len(temp))
             else:
-                boyut.append(1)
-                boyut.append(len(temp))
+                y_boyut = (len(temp),)
+                return y_boyut
             return tuple(boyut) 
-
 
     def __getitem__(self, index):
         """
@@ -190,6 +158,15 @@ class gergen:
 
         if not isinstance(index, tuple):
             index = (index,)  # Make single indexes into a tuple for uniform handling
+
+        if len(self.__boyut) == 1:
+            if len(index) > 1:
+                raise IndexError("Too many indices for the gergen.")
+            if index[0] < 0:
+                index = (index[0] + self.__boyut[0],)
+            if index[0] < 0 or index[0] >= self.__boyut[0]:
+                raise IndexError("Index out of range")
+            return self.__veri[index[0]]
         
         current = self.__veri
         for idx in index:
@@ -212,6 +189,8 @@ class gergen:
             return '[]'
         elif isinstance(self.__veri, (int, float)):
             return f'0 boyutlu skaler gergen:\n{self.__veri}'
+        elif len(self.__boyut) == 1:
+            return f'1 boyutlu vektor gergen:\n{self.__veri}'
         else:
             # Helper function to format nested lists correctly
             def format_nested_list(veri):
@@ -248,10 +227,10 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot multiply an empty gergen.")
         
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)) or other.boyut() == (1,):
             if isinstance(self.__veri, (int, float)):
                 # Multiply two scalars
-                new_data = self.__veri * other
+                new_data = self.__veri * other if isinstance(other, (int, float)) else self.__veri * other.__veri[0]
                 return gergen(new_data)
             else:
                 # Multiply each element of the gergen of any size by the scalar
@@ -260,7 +239,7 @@ class gergen:
                         return [scalar_mult(subdata, scalar) for subdata in data]
                     else:
                         return data * scalar
-                new_data = scalar_mult(self.__veri, other)
+                new_data = scalar_mult(self.__veri, other) if isinstance(other, (int, float)) else scalar_mult(self.__veri, other.__veri[0])
                 return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise multiplication of two gergen objects
@@ -274,7 +253,15 @@ class gergen:
                     else:
                         return data1 * data2
                 new_data = elementwise_mult(self.__veri, other.__veri)
-                return gergen(new_data)          
+                return gergen(new_data)
+            
+    def __rmul__(self, other: Union[int, float]) -> 'gergen':
+        """
+        Handles right-side multiplication, making multiplication commutative.
+        """
+        # Directly call __mul__ for commutative scalar multiplication
+        # This ensures that scalar * gergen uses the same logic as gergen * scalar
+        return self.__mul__(other)
 
     def __truediv__(self, other: Union['gergen', int, float]) -> 'gergen':
         """
@@ -291,7 +278,7 @@ class gergen:
             raise ZeroDivisionError("Cannot divide by zero.")
         
         # Case where the divisor is a scalar (int or float)
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)) or other.boyut() == (1,):
             # Recursive function for scalar division
             def scalar_div(data, scalar):
                 if isinstance(data, list):
@@ -299,10 +286,10 @@ class gergen:
                     return [scalar_div(subdata, scalar) for subdata in data]
                 else:
                     # Base case: data is not a list (i.e., an actual number)
-                    return data / scalar  # Perform true division
+                    return data / scalar if isinstance(scalar, (int, float)) else data / scalar.__veri[0]
 
             # Apply scalar division to the entire nested list structure
-            new_data = scalar_div(self.__veri, other)
+            new_data = scalar_div(self.__veri, other) if isinstance(other, (int, float)) else scalar_div(self.__veri, other.__veri[0])
             return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise division of two gergen objects
@@ -333,10 +320,10 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot add to an empty gergen.")
         
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)) or other.boyut() == (1,):
             if isinstance(self.__veri, (int, float)):
                 # Add two scalars
-                new_data = self.__veri + other
+                new_data = self.__veri + other if isinstance(other, (int, float)) else self.__veri + other.__veri[0]
                 return gergen(new_data)
             else:
                 # Add the scalar to each element of the gergen of any size
@@ -344,8 +331,8 @@ class gergen:
                     if isinstance(data, list):
                         return [scalar_add(subdata, scalar) for subdata in data]
                     else:
-                        return data + scalar
-                new_data = scalar_add(self.__veri, other)
+                        return data + scalar 
+                new_data = scalar_add(self.__veri, other) if isinstance(other, (int, float)) else scalar_add(self.__veri, other.__veri[0])
                 return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise addition of two gergen objects
@@ -372,10 +359,10 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot subtract from an empty gergen.")
         
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)) or other.boyut() == (1,):
             if isinstance(self.__veri, (int, float)):
                 # Subtract two scalars
-                new_data = self.__veri - other
+                new_data = self.__veri - other if isinstance(other, (int, float)) else self.__veri - other.__veri[0]
                 return gergen(new_data)
             else:
                 # Subtract the scalar from each element of the gergen of any size
@@ -384,7 +371,7 @@ class gergen:
                         return [scalar_sub(subdata, scalar) for subdata in data]
                     else:
                         return data - scalar
-                new_data = scalar_sub(self.__veri, other)
+                new_data = scalar_sub(self.__veri, other) if isinstance(other, (int, float)) else scalar_sub(self.__veri, other.__veri[0])
                 return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise subtraction of two gergen objects
@@ -423,6 +410,15 @@ class gergen:
         else:
             return self.__boyut
         
+    @property
+    def D(self):
+        """
+        Computes and returns the transpose of the gergen lazily.
+        """
+        if self._D is None:  # If the transpose hasn't been computed yet
+            self._D = self.devrik()  # Compute the transpose and store it in _D
+        return self._D
+        
     def devrik(self):
         """
         Returns the transpose of the gergen.
@@ -430,10 +426,10 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot get the transpose of an empty gergen.")
         
-        if isinstance(self.__veri, (int, float)) or self.boyut() == (1,1):
+        if isinstance(self.__veri, (int, float)) or self.boyut() == (1,):
             return self
         
-        if self.boyut()[0] == 1 and len(self.boyut()) == 2:
+        if self.boyut() == (self.uzunluk(),):
             return gergen([[item] for item in self.__veri])
         elif self.boyut()[1] == 1 and len(self.boyut()) == 2:
             return gergen([item[0] for item in self.__veri])
@@ -643,30 +639,33 @@ class gergen:
         new_data = build_structure(duz, list(yeni_boyut))
         return gergen(new_data)  
 
-    def ic_carpim(self, other):
+    def ic_carpim(self, other): 
         """
         Calculates the inner (dot) product of this gergen object with another.
         """
         if self.__veri is None or other.__veri is None:
             raise ValueError("Cannot calculate the inner product of an empty gergen.")
-        elif (len(self.__boyut) != 2 and self.__boyut != ()) or (len(other.__boyut) != 2 and other.__boyut != ()):
-            raise ValueError("Inner product is only defined for 1D or 2D gergens.")
+        # Check if it's 1d or 2d 1d boyut = (n,) 2d boyut = (n,m)
         
         # Scalar case
         if isinstance(self.__veri, (int, float)) and isinstance(other.__veri, (int, float)):
             return self.__veri * other.__veri
         
-        if self.boyut()[0] == 1:
+        # 1D case
+        if len(self.boyut()) == 1 and len(other.boyut()) == 1:
             if self.boyut() != other.boyut():
                 raise ValueError("Cannot calculate the inner product of 1D gergens with different dimensions.")
-            
-            return sum([self.__veri[i] * other.__veri[i] for i in range(self.boyut()[1])])
-        else:
+            return sum(a * b for a, b in zip(self.__veri, other.__veri))
+        # 2D case
+        elif len(self.boyut()) == 2 and len(other.boyut()) == 2:
             if self.boyut()[1] != other.boyut()[0]:
                 raise ValueError("Cannot calculate the inner product of 2D gergens with incompatible dimensions.")
             
-            # Transpose the first gergen and perform matrix multiplication
-            return self.devrik() * other
+            result = [[sum(a * b for a, b in zip(row_a, col_b))
+                       for col_b in zip(*other.__veri)] for row_a in self.__veri]
+            return gergen(result)
+        else:
+            raise ValueError("Cannot calculate the inner product of gergens with different dimensions.")
 
     def dis_carpim(self, other):
         """
@@ -676,83 +675,57 @@ class gergen:
         if not isinstance(other, gergen):
             raise TypeError("Both operands must be gergen instances.")
 
-        # Ensuring both self.veri and other.veri are vectors (1-D arrays)
-        if not (isinstance(self.__veri, list) and all(isinstance(item, (int, float)) for item in self.__veri)) or \
-           not (isinstance(other.__veri, list) and all(isinstance(item, (int, float)) for item in other.__veri)):
-            raise ValueError("Both operands must be 1-D arrays to compute the outer product.")
+        # Ensuring both self and other are 1-D vectors by checking their dimensions
+        if len(self.boyut()) != 1 or len(other.boyut()) != 1:
+            raise ValueError("Both operands must be 1-D vectors to compute the outer product.")
         
+        # Further ensure both are non-empty
+        if self.uzunluk() == 0 or other.uzunluk() == 0:
+            raise ValueError("Cannot calculate the outer product of empty vectors.")
+
         # Calculate the outer product
         result = [[self_item * other_item for other_item in other.__veri] for self_item in self.__veri]
         
         return gergen(result)
-    
+
     def topla(self, eksen=None):
         """
-        Sums up values in the gergen. If eksen is None, all elements are added.
-        If eksen is not None, performs the summation along the specified axis.
+        Sums up the elements of the tensor, optionally along a specified axis.
         """
         if self.__veri is None:
-            raise ValueError("Cannot sum up elements of an empty gergen.")
-
-        # Check if eksen is valid
-        if eksen not in (None, 0, 1):
-            raise TypeError("eksen must be None, 0, or 1.")
-
-        # Global summation
-        if eksen is None:
-            return sum(self.duzlestir().__veri)
-
-        # Axis-specific summation
-        def sum_axis(data, axis): # 0 means (3x3x2x3)
-            if axis == 0:
-                pass
-                
-        summed_data = sum_axis(self.__veri, eksen)
-
-        # For axis-specific summation, the result should be wrapped in a gergen
-        return gergen(summed_data)
+            raise ValueError("Cannot calculate the sum of an empty gergen.")
         
+        def sum_along_the_axis(data, axis):
+            if axis == 0:
+                if isinstance(data[0], list):
+                    return [sum_along_the_axis([x[i] for x in data], 0) for i in range(len(data[0]))]
+                else:
+                    return sum(data)
+            else:
+                return [sum_along_the_axis(sublist, axis - 1) for sublist in data]
+            
+        if eksen is None:
+            if isinstance(self.__veri, (int, float)):
+                return self.__veri
+            return sum(self.duzlestir().__veri)
+        else:
+            if isinstance(eksen, int) and 0 <= eksen < len(self.__boyut):
+                return gergen(sum_along_the_axis(self.__veri, eksen))
+            else:
+                raise ValueError("Specified axis is out of the bounds")
+            
     def ortalama(self, eksen=None):
         """
         Computes the average of elements in the tensor, with the option to compute
         this average across different axes of the tensor based on the eksen parameter.
         """
         if self.__veri is None:
-            raise ValueError("Cannot calculate the average of an empty gergen.")
-
-        # Check if eksen is valid
-        if eksen not in (None, 0, 1):
-            raise TypeError("eksen must be an integer or None.")
-
-        # Global average
+            raise ValueError("Cannot calculate the mean of an empty gergen.")
+        
         if eksen is None:
-            total_sum = self.topla(eksen=None)
-            num_elements = self.uzunluk()
-            return total_sum / num_elements if num_elements > 0 else 0
-
-        # Verify dimensions for axis-specific average
-        if eksen < 0 or eksen >= len(self.__boyut):
-            raise ValueError("Specified eksen is out of bounds.")
-
-        # Axis-specific average
-        def avg_axis(data, axis, depth=0):
-            if depth == axis:
-                # We are at the axis to average over
-                if isinstance(data[0], list):
-                    # Average each sublist recursively and return as gergen
-                    averaged = [sum(item) / len(item) for item in zip(*data)]
-                    return averaged
-                else:
-                    # Base case: directly average the elements at this level
-                    return sum(data) / len(data) if data else 0
-            else:
-                # Not yet at the axis, recurse deeper
-                return [avg_axis(item, axis, depth + 1) for item in data]
-
-        averaged_data = avg_axis(self.__veri, eksen)
-
-        # For axis-specific average, the result should be wrapped in a gergen
-        return gergen(averaged_data)
+            return self.topla() / self.uzunluk()
+        else:
+            return self.topla(eksen) / self.__boyut[eksen]
 
 def main():
     # a main function to test the functions
@@ -807,6 +780,15 @@ def main():
     # print()
     # print(g[0, 2, 1])
 
+    # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # print(g)
+    # print()
+    # print(g[0])
+    # print()
+    # print(g[-1])
+    # print()
+    # print(g[0, 1])
+
     ### test the __str__ method
 
     # print(gergen())
@@ -853,6 +835,28 @@ def main():
     # print()
     # print(g1dm * g3)
 
+    # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # print(g)
+    # print()
+    # print(g * 2)
+    # print()
+    # print(g * g)
+    # print()
+    # print(g * g * 2)
+    # print()
+    # g2 = gergen([[1, 2, 3], [4, 5, 6]])
+    # print(g * g2)
+    # g3 = gergen([2])
+    # print(g * g3)
+
+    g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    print(g)
+    print()
+    print(g * 2)
+    print()
+    print(2 * g)
+    
+
     ### test the __truediv__ method
 
     # g1 = gergen([[1, 2, 3], [4, 5, 6]])
@@ -879,6 +883,20 @@ def main():
     # # print(g5 / g6) # ValueError: Cannot divide gergens with different dimensions.
     # g7 = gergen([3])
     # print(g5 / g7)
+
+    # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # print(g)
+    # print()
+    # print(g / 2)
+    # print()
+    # print(g / g)
+    # print()
+    # print(g / g / 2)
+    # print()
+    # g3 = gergen([2])
+    # print(g / g3)
+    # g2 = gergen([[1, 2, 3], [4, 5, 6]])
+    # print(g / g2)
 
     ### test the __add__ method
 
@@ -1028,6 +1046,9 @@ def main():
     # garr = gergen([1,2,3,4,5])
     # print(garr.uzunluk()) # 5
 
+    # g = gergen([[1], [2], [3]])
+    # print(g.uzunluk()) # 3
+
     ### test the boyut method
 
     ## empty gergen
@@ -1036,7 +1057,16 @@ def main():
 
     ## 1x1 gergen
     # g = gergen([10])
-    # print(g.boyut()) # (1,1)
+    # print(g.boyut()) # (1,)
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.boyut()) # (3,)
+    # print(g.D)
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.boyut()) # (3, 1)
 
     ### test the devrik method
 
@@ -1108,7 +1138,7 @@ def main():
     # print(g.cos()) 
     # print(g.tan()) 
 
-    ## 3x1 gergen
+    # 3x1 gergen
     # g = gergen([[math.pi / 6], [math.pi / 3], [math.pi / 4]])
     # print(g.sin()) # [[0.5], [0.8660254037844386], [0.7071067811865475]]
     # print(g.cos()) # [[0.8660254037844386], [0.5], [0.7071067811865475]]
@@ -1321,12 +1351,12 @@ def main():
 
     ## 1x1 gergen
     # g = gergen([10])
-    # print(g.boyutlandir((1, 1))) # [[10]]
+    # print(g.boyutlandir((1,))) # [[10]]
     # print(g.boyutlandir((1, 2))) # ValueError: Cannot reshape a gergen to a different size.
 
     ## scalar gergen
     # g = gergen(10)
-    # print(g.boyutlandir((1, 1)))
+    # print(g.boyutlandir((1,))) # [[10]]
     # print(g.boyutlandir((1, 1, 5))) # ValueError: Cannot reshape a gergen to a different size.
 
     ## 1x3 gergen
@@ -1338,6 +1368,7 @@ def main():
     ## 3x1 gergen
     # g = gergen([[1], [2], [3]])
     # print(g.boyutlandir((1, 3))) # [[1, 2, 3]]
+    # print(g.boyutlandir((3,))) # [1, 2, 3]
     # print(g.boyutlandir((3, 1))) # [[1] \n [2] \n [3]]
     # print(g.boyutlandir((1, 1, 3, 1, 1))) 
 
@@ -1393,7 +1424,11 @@ def main():
 
     ## 3x1 gergen ??????????????????????????
     # g = gergen([[1], [2], [3]])
-    # print(g.ic_carpim(g)) # 14
+    # print(g.ic_carpim(g.boyutlandir((1, 3)))) # 14
+    # # print(g.ic_carpim(g)) # err
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.dot(arr, np.array(g.boyutlandir((1,3)).listeye())))
 
     ## 3x3 gergen ??????????????????????????
     # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -1415,18 +1450,30 @@ def main():
     ## 1x1 gergen
     # g = gergen([10])
     # print(g.dis_carpim(g)) # [[100]]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.outer(arr, arr))
 
-    ## scalar gergen ??????????????????????????
+    ## scalar gergen
     # g = gergen(10)
-    # print(g.dis_carpim(g)) # [[100]]
+    # print(g.dis_carpim(g)) # err
 
     ## 1x3 gergen
     # g = gergen([1, 2, 3])
     # print(g.dis_carpim(g)) # [[1, 2, 3], [2, 4, 6], [3, 6, 9]]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.outer(arr, arr))
 
-    ## 3x1 gergen ??????????????????????????
+    # g = gergen([1, 2, 3, 4, 5, 6])
+    # print(g.dis_carpim(g)) # [[1, 2, 3, 4, 5, 6], [2, 4, 6, 8, 10, 12], [3, 6, 9, 12, 15, 18], [4, 8, 12, 16, 20, 24], [5, 10, 15, 20, 25, 30], [6, 12, 18, 24, 30, 36]]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.outer(arr, arr))
+
+    ## 3x1 gergen
     # g = gergen([[1], [2], [3]])
-    # print(g.dis_carpim(g)) # [[1, 2, 3], [2, 4, 6], [3, 6, 9]]
+    # print(g.dis_carpim(g)) # err
 
     ## 3x3 gergen 
     # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -1442,47 +1489,312 @@ def main():
     ## 1x1 gergen
     # g = gergen([3])
     # print(g.topla()) # 3
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+    # print()
     # print(g.topla(0)) # 3
-    # print(g.topla(1)) # 3
-    # print(g.topla(2)) # err ??????????????????????????
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=0))
+    # print()
+    # print(g.topla(1)) # err
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=1))
 
     ## scalar gergen
     # g = gergen(10)
     # print(g.topla()) # 10
-    # print(g.topla(0)) # 10
-    # print(g.topla(1)) # 10
-    # print(g.topla(2)) # err ??????????????????????????
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+
+    # print(g.topla(0)) # err
 
     ## 1x3 gergen
     # g = gergen([1, 2, 3])
     # print(g.topla()) # 6
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+    # print()
     # print(g.topla(0)) # 6
-    # print(g.topla(1)) # 6
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=0))
+
+    # print(g.topla(1)) # err
 
     ## 3x1 gergen
     # g = gergen([[1], [2], [3]])
+
     # print(g.topla()) # 6
-    # print(g.topla(0)) # 6
-    # print(g.topla(1)) # 6
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+
+    # print()
+    # print(g.topla(0)) # [6]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=0))
+
+    # print(g.topla(1)) # [1, 2, 3]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=1))
 
     ## 3x3 gergen
     # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
     # print(g.topla()) # 45
-    # print(g.topla(0)) # 45
-    # print(g.topla(1)) # 45
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+
+    # print(g.topla(0)) # [12, 15, 18]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=0))
+
+    # print(g.topla(1)) # [6, 15, 24]
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=1))
 
     ## 3x3x2 gergen
     # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
-    # print(g.topla())
+    # print(g)
+
+    # print(g.topla()) # 171
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+
     # print(g.topla(0))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=0))
+
     # print(g.topla(1))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=1))
+
     # print(g.topla(2))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=2))
+
+    ## 3x5x3x2 gergen
+    # g = rastgele_dogal((3, 5, 3, 2))
+
+    # print(g.topla())
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr))
+
+    # print(g.topla(0))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=0))
+
+    # print(g.topla(1))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=1))
+
+    # print(g.topla(2))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=2))
+
+    # print(g.topla(3))
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.sum(arr, axis=3))
 
     ### test the ortalama method
 
-    
+    ## empty gergen
+    # g = gergen()
+    # print(g.ortalama()) # ValueError: Cannot calculate the average of an empty gergen.
+
+    ## 1x1 gergen
+    # g = gergen([10])
+    # print(g.ortalama()) # 10.0
+    # print("----------")
+    # print(g.ortalama(0)) # 10.0
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=0))
+
+    # print(g.ortalama(1)) # err
+
+    ## scalar gergen
+    # g = gergen(10)
+    # print(g.ortalama()) # 10.0
+    # print("----------")
+    # print(g.ortalama(0)) # err no axis in scalars
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=0))
+
+    # print(g.ortalama(1)) # err
+
+    ## 1x3 gergen
+    # g = gergen([1, 2, 3])
+    # print(g.ortalama()) # 2.0
+    # print("----------")
+    # print(g.ortalama(0)) # 2.0
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=0))
+
+    # print(g.ortalama(1)) # err
+
+    ## 3x1 gergen
+    # g = gergen([[1], [2], [3]])
+    # print(g.ortalama()) # 2.0
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr))
+    # print("----------")
+    # print(g.ortalama(0)) # 2.0
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=0))
+    # print("----------")
+    # print(g.ortalama(1)) # [2.0]
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=1))
+
+    ## 3x3 gergen
+    # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # print(g.ortalama()) # 5.0
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr))
+    # print("----------")
+    # print(g.ortalama(0)) # [4.0, 5.0, 6.0]
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=0))
+    # print("----------")
+    # print(g.ortalama(1)) # [2.0, 5.0, 8.0]
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=1))
+
+    ## 3x3x2 gergen
+    # g = gergen([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]], [[13, 14], [15, 16], [17, 18]]])
+    # print(g.ortalama()) # 9.5
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr))
+    # print("----------")
+    # print(g.ortalama(0))
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=0))
+    # print("----------")
+    # print(g.ortalama(1))
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=1))
+    # print("----------")
+    # print(g.ortalama(2))
+    # print("----------")
+    # arr = np.array(g.listeye())
+    # print(np.mean(arr, axis=2))
 
 
+def example_1():
+    # Generate two gergen objects A and B with shapes (64, 64) using a similar approach to rastgele_gercek
+    # For simplicity, let's assume rastgele_gercek generates a 2D array of random floating-point numbers within a given range
+    A_gergen = rastgele_gercek((64, 64))
+    A_arr = np.array(A_gergen.listeye())
+    B_gergen = rastgele_gercek((64, 64))
+    B_arr = np.array(B_gergen.listeye())
+
+    start_time_gergen = time.time()
+    ATB_gergen = A_gergen.D * B_gergen # Perform the operation A^T × B (Element-wise multiplication)
+    # print(ATB_gergen)
+    end_time_gergen = time.time()
+
+    # Now with NumPy
+    start_time_numpy = time.time()
+    ATB_numpy = A_arr.T * B_arr
+    # print(ATB_numpy)
+    end_time_numpy = time.time()
+
+    # Time and result comparison
+    time_gergen = end_time_gergen - start_time_gergen
+    time_numpy = end_time_numpy - start_time_numpy
+    difference = [a - b for a, b in zip(ATB_gergen.duzlestir(), ATB_numpy.flatten())] # Differences between elements
+
+    return time_gergen, time_numpy, difference
+
+def example_2():
+    # Generate three gergen objects A, B, and C with shapes (4,16,16,16) using a similar approach to rastgele_gercek
+    A = rastgele_gercek((4,16,16,16))
+    A_arr = np.array(A.listeye())
+    B = rastgele_gercek((4,16,16,16))
+    B_arr = np.array(B.listeye())
+    C = rastgele_gercek((4,16,16,16))
+    C_arr = np.array(C.listeye())
+
+    start_time_gergen = time.time()
+    result_gergen = (A * B + C * A + B * C).ortalama()
+    print("result_gergen: ", result_gergen)
+    end_time_gergen = time.time()
+
+    # NumPy equivalent
+    start_time_numpy = time.time()
+    result_numpy = (A_arr * B_arr + C_arr * A_arr + B_arr * C_arr).mean()
+    print("result_numpy: ", result_numpy)
+    end_time_numpy = time.time()
+
+    # Time and result comparison
+    time_gergen = end_time_gergen - start_time_gergen
+    time_numpy = end_time_numpy - start_time_numpy
+    difference = np.abs(result_gergen - result_numpy)
+
+    return time_gergen, time_numpy, difference
+
+def example_3():
+    # Generate two gergen’s A and B with shapes (3,64,64) using a similar approach to rastgele_gercek
+    A = rastgele_gercek((3,64,64))
+    A_arr = np.array(A.listeye())
+    B = rastgele_gercek((3,64,64))
+    B_arr = np.array(B.listeye())
+
+    start_time_gergen = time.time()
+    result_gergen = (A.sin() + B.cos()).ln().us(2) / 8  # Perform the operation ln(sin(A) + cos(B))**2 / 8
+    # print("result_gergen: ", result_gergen)
+    end_time_gergen = time.time()
+
+    # NumPy equivalent
+    start_time_numpy = time.time()
+    result_numpy = (np.log(np.sin(A_arr) + np.cos(B_arr))**2 / 8)
+    # print("result_numpy: ", result_numpy)
+    end_time_numpy = time.time()
+
+    # Time and result comparison
+    time_gergen = end_time_gergen - start_time_gergen
+    time_numpy = end_time_numpy - start_time_numpy
+    difference = [a - b for a, b in zip(result_gergen.duzlestir(), result_numpy.flatten())]
+
+    return time_gergen, time_numpy, difference
 
 if __name__ == "__main__":
     main()
+    # Run and print the results for each example
+    time_gergen_1, time_numpy_1, diff_1 = example_1()
+    print(f"Example 1: Gergen time: {time_gergen_1:.8f} seconds, NumPy time: {time_numpy_1:.8f} seconds, Maximum difference: {max(diff_1)}")
+    time_gergen_2, time_numpy_2, diff_2 = example_2()
+    print(f"Example 2: Gergen time: {time_gergen_2:.8f} seconds, NumPy time: {time_numpy_2:.8f} seconds, Difference: {diff_2}")
+    time_gergen_3, time_numpy_3, diff_3 = example_3()
+    print(f"Example 3: Gergen time: {time_gergen_3:.8f} seconds, NumPy time: {time_numpy_3:.8f} seconds, Maximum difference: {max(diff_3)}")
