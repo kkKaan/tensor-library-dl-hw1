@@ -431,7 +431,7 @@ class gergen:
         Handles right-side subtraction, making subtraction non-commutative.
         """
         # Directly call __sub__ for non-commutative scalar subtraction
-        # This ensures that scalar - gergen uses the same logic as gergen - scalar
+        # This ensures that scalar - gergen uses takes negative of each element of gergen and adds the scalar
         self = self.__mul__(-1)
         return self.__add__(other)
 
