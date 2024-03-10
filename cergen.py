@@ -227,9 +227,12 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot multiply an empty gergen.")
         
-        if isinstance(other, (int, float)) or other.boyut() == (1,):
+        if isinstance(other, (int, float)) or other.boyut() == (1,) or other.boyut() == ():
             if isinstance(self.__veri, (int, float)):
                 # Multiply two scalars
+                if isinstance(other, gergen) and other.boyut() == ():
+                    new_data = self.__veri * other.__veri
+                    return gergen(new_data)
                 new_data = self.__veri * other if isinstance(other, (int, float)) else self.__veri * other.__veri[0]
                 return gergen(new_data)
             else:
@@ -239,11 +242,18 @@ class gergen:
                         return [scalar_mult(subdata, scalar) for subdata in data]
                     else:
                         return data * scalar
+                if isinstance(other, gergen) and other.boyut() == ():
+                    new_data = scalar_mult(self.__veri, other.__veri)
+                    return gergen(new_data)
                 new_data = scalar_mult(self.__veri, other) if isinstance(other, (int, float)) else scalar_mult(self.__veri, other.__veri[0])
                 return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise multiplication of two gergen objects
-            if self.__boyut != other.__boyut:
+            if self.__boyut == ():
+                return self.__veri * other
+            elif self.__boyut == (1,):
+                return self.__veri[0] * other
+            elif self.__boyut != other.__boyut:
                 raise ValueError("Cannot multiply gergens with different dimensions.")
             else:
                 # Multiply each element of the gergen of any size by the corresponding element of the other gergen
@@ -280,7 +290,7 @@ class gergen:
             raise ZeroDivisionError("Cannot divide by zero.")
         
         # Case where the divisor is a scalar (int or float)
-        if isinstance(other, (int, float)) or other.boyut() == (1,):
+        if isinstance(other, (int, float)) or other.boyut() == (1,) or other.boyut() == ():
             # Recursive function for scalar division
             def scalar_div(data, scalar):
                 if isinstance(data, list):
@@ -290,12 +300,19 @@ class gergen:
                     # Base case: data is not a list (i.e., an actual number)
                     return data / scalar if isinstance(scalar, (int, float)) else data / scalar.__veri[0]
 
+            if isinstance(other, gergen) and other.boyut() == ():
+                new_data = scalar_div(self.__veri, other.__veri)
+                return gergen(new_data)
             # Apply scalar division to the entire nested list structure
             new_data = scalar_div(self.__veri, other) if isinstance(other, (int, float)) else scalar_div(self.__veri, other.__veri[0])
             return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise division of two gergen objects
-            if self.__boyut != other.__boyut:
+            if self.__boyut == ():
+                return self.__veri / other
+            elif self.__boyut == (1,):
+                return self.__veri[0] / other
+            elif self.__boyut != other.__boyut:
                 raise ValueError("Cannot divide gergens with different dimensions.")
             else:
                 # Recursive function for element-wise division
@@ -349,9 +366,12 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot add to an empty gergen.")
         
-        if isinstance(other, (int, float)) or other.boyut() == (1,):
+        if isinstance(other, (int, float)) or other.boyut() == (1,) or other.boyut() == ():
             if isinstance(self.__veri, (int, float)):
                 # Add two scalars
+                if isinstance(other, gergen) and other.boyut() == ():
+                    new_data = self.__veri + other.__veri
+                    return gergen(new_data)
                 new_data = self.__veri + other if isinstance(other, (int, float)) else self.__veri + other.__veri[0]
                 return gergen(new_data)
             else:
@@ -360,12 +380,19 @@ class gergen:
                     if isinstance(data, list):
                         return [scalar_add(subdata, scalar) for subdata in data]
                     else:
-                        return data + scalar 
+                        return data + scalar
+                if isinstance(other, gergen) and other.boyut() == ():
+                    new_data = scalar_add(self.__veri, other.__veri)
+                    return gergen(new_data)
                 new_data = scalar_add(self.__veri, other) if isinstance(other, (int, float)) else scalar_add(self.__veri, other.__veri[0])
                 return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise addition of two gergen objects
-            if self.__boyut != other.__boyut:
+            if self.__boyut == ():
+                return other + self.__veri
+            elif self.__boyut == (1,):
+                return other + self.__veri[0]
+            elif self.__boyut != other.__boyut:
                 raise ValueError("Cannot add gergens with different dimensions.")
             else:
                 # Add each element of the gergen of any size to the corresponding element of the other gergen
@@ -396,9 +423,12 @@ class gergen:
         if self.__veri is None:
             raise ValueError("Cannot subtract from an empty gergen.")
         
-        if isinstance(other, (int, float)) or other.boyut() == (1,):
+        if isinstance(other, (int, float)) or other.boyut() == (1,) or other.boyut() == ():
             if isinstance(self.__veri, (int, float)):
                 # Subtract two scalars
+                if isinstance(other, gergen) and other.boyut() == ():
+                    new_data = self.__veri - other.__veri
+                    return gergen(new_data)
                 new_data = self.__veri - other if isinstance(other, (int, float)) else self.__veri - other.__veri[0]
                 return gergen(new_data)
             else:
@@ -408,11 +438,18 @@ class gergen:
                         return [scalar_sub(subdata, scalar) for subdata in data]
                     else:
                         return data - scalar
+                if isinstance(other, gergen) and other.boyut() == ():
+                    new_data = scalar_sub(self.__veri, other.__veri)
+                    return gergen(new_data)
                 new_data = scalar_sub(self.__veri, other) if isinstance(other, (int, float)) else scalar_sub(self.__veri, other.__veri[0])
                 return gergen(new_data)
         elif isinstance(other, gergen):
             # Element-wise subtraction of two gergen objects
-            if self.__boyut != other.__boyut:
+            if self.__boyut == ():
+                return self.__veri - other
+            elif self.__boyut == (1,):
+                return self.__veri[0] - other
+            elif self.__boyut != other.__boyut:
                 raise ValueError("Cannot subtract gergens with different dimensions.")
             else:
                 # Subtract each element of the gergen of any size from the corresponding element of the other gergen

@@ -11,6 +11,10 @@ def main():
 
     cekirdek(2)
 
+    # g1 = gergen([5,3])
+    # g2 = gergen([[1, 2, 3], [4, 5, 6]])
+    # print(g1 * g2)
+
     # g = rastgele_dogal((3,1,2,3))
     # g2 = rastgele_gercek((3, 3, 2, 4))
     # print(g)
@@ -130,10 +134,10 @@ def main():
     # print()
     # print(g * g * 2)
     # print()
+    # print(g * gergen([2]))
+    
     # g2 = gergen([[1, 2, 3], [4, 5, 6]])
     # print(g * g2)
-    # g3 = gergen([2])
-    # print(g * g3)
 
     # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
     # print(g)
@@ -141,8 +145,20 @@ def main():
     # print(g * 2)
     # print()
     # print(2 * g)
-    
 
+    # g = rastgele_dogal((5, 3, 1, 2))
+    # print(g)
+    # print()
+    # print(g * 2)
+    # print()
+    # print(2 * g)
+    # print()
+    # print(gergen([-5]) * g)
+    # print()
+    # print(-5 * g)
+    # print()
+    # print(g * gergen(-5))
+    
     ### test the __truediv__ method
 
     # g1 = gergen([[1, 2, 3], [4, 5, 6]])
@@ -180,9 +196,10 @@ def main():
     # print(g / g / 2)
     # print()
     # g3 = gergen([2])
-    # print(g / g3)
+    # print(g / g3) 
+
     # g2 = gergen([[1, 2, 3], [4, 5, 6]])
-    # print(g / g2)
+    # print(g / g2) # ValueError: Cannot divide gergens with different dimensions.
 
     # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
     # print(g)
@@ -202,6 +219,18 @@ def main():
     # print(g / 4)
     # print()
     # print(1 / g)
+    # print()
+    # print(g / gergen(2))
+    # print()
+    # print(g / gergen([2]))
+    # print()
+    # print(g / 2)
+    # print()
+    # print(gergen([2]) / g)
+    # print()
+    # print(gergen(2) / g)
+    # print()
+    # print(2 / g)
 
     ### test the __add__ method
 
@@ -270,12 +299,37 @@ def main():
     # print(5 + g53)
     # print()
     # print(-5 + g53)
+    # print()
+    # print(gergen([-5]) + g53)
 
     ## add 3x3x2x1 and 3x3x2x1 gergens
     # gg1 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
     # gg2 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
     # gg3 = gg1 + gg2
-    # print(gg3)      
+    # print(gg3)
+
+    # g = rastgele_dogal((5, 3, 1, 2))
+    # print(g)
+    # print()
+    # print(g + 2)
+    # print()
+    # print(4 + g)
+    # print()
+    # print(g + 4)
+    # print()
+    # print(1 + g)
+    # print()
+    # print(g + gergen(2))
+    # print()
+    # print(g + gergen([2]))
+    # print()
+    # print(g + 2)
+    # print()
+    # print(gergen([2]) + g)
+    # print()
+    # print(gergen(2) + g)
+    # print()
+    # print(2 + g)
 
     ### test the __sub__ method
 
@@ -350,6 +404,29 @@ def main():
     # gg2 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
     # gg3 = gg1 - gg2
     # print(gg3)
+
+    # g = rastgele_dogal((5, 3, 1, 2))
+    # print(g)
+    # print()
+    # print(g - 2)
+    # print()
+    # print(4 - g)
+    # print()
+    # print(g - 4)
+    # print()
+    # print(1 - g)
+    # print()
+    # print(g - gergen(2))
+    # print()
+    # print(g - gergen([2]))
+    # print()
+    # print(g - 2)
+    # print()
+    # print(gergen([2]) - g)
+    # print()
+    # print(gergen(2) - g)
+    # print()
+    # print(2 - g)
 
     ### test the uzunluk method
 
@@ -828,6 +905,7 @@ def main():
     # arr = np.array(g.listeye())
     # print(np.sum(arr, axis=0))
     # print()
+
     # print(g.topla(1)) # err
     # print()
     # arr = np.array(g.listeye())
