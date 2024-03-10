@@ -50,14 +50,19 @@ def main():
     # print(gh)
 
     ### test the __getitem__ method
-
+    
+    # g = gergen([[1, 2, 3], [4, 5, 6]])
     # print(g)
     # print()
     # print(g[0])
     # print()
     # print(g[0, 1]) # = print(g[0][1])
     # print()
-    # print(g[0, 2, 1])
+    # print(g[-1][-1])
+    # print()
+    
+    # print(g[4, 1]) # IndexError: Index out of range.
+    # print(g[0, 2, 1]) 
 
     # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
     # print(g)
@@ -66,7 +71,9 @@ def main():
     # print()
     # print(g[-1])
     # print()
-    # print(g[0, 1])
+    
+    # print(g[10]) # IndexError: Index out of range.
+    # print(g[0, 1]) # err
 
     ### test the __str__ method
 
@@ -128,12 +135,12 @@ def main():
     # g3 = gergen([2])
     # print(g * g3)
 
-    g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
-    print(g)
-    print()
-    print(g * 2)
-    print()
-    print(2 * g)
+    # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # print(g)
+    # print()
+    # print(g * 2)
+    # print()
+    # print(2 * g)
     
 
     ### test the __truediv__ method
@@ -176,6 +183,25 @@ def main():
     # print(g / g3)
     # g2 = gergen([[1, 2, 3], [4, 5, 6]])
     # print(g / g2)
+
+    # g = gergen([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # print(g)
+    # print()
+    # print(g / 2)
+    # print()
+    # print(2 / g)
+    # print()
+    
+    # g = rastgele_dogal((5, 3, 1, 2))
+    # print(g)
+    # print()
+    # print(g / 2)
+    # print()
+    # print(4 * g)
+    # print()
+    # print(g / 4)
+    # print()
+    # print(1 / g)
 
     ### test the __add__ method
 
@@ -234,6 +260,17 @@ def main():
     # gs53 = g53 + 2
     # print(gs53)
 
+    ## test commutativity with the prev one
+    # print(g53)
+    # print()
+    # print(g53 + g53)
+    # print()
+    # print(g53 + 5)
+    # print()
+    # print(5 + g53)
+    # print()
+    # print(-5 + g53)
+
     ## add 3x3x2x1 and 3x3x2x1 gergens
     # gg1 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
     # gg2 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
@@ -291,11 +328,22 @@ def main():
     # print(g213)
 
     ## subtract scalar from 5x3x1x2 gergen
-    # g53 = rastgele_dogal((5, 3, 1, 2))
+    # g53 = rastgele_dogal((5, 3, 1, 2))
     # print(g53)
     # print()
     # gs53 = g53 - 2
     # print(gs53)
+
+    ## test commutativity with the prev one
+    # print(g53)
+    # print()
+    # print(g53 - g53)
+    # print()
+    # print(g53 - 5)
+    # print()
+    # print(5 - g53)
+    # print()
+    # print(-5 - g53)
 
     ## subtract 3x3x2x1 and 3x3x2x1 gergens
     # gg1 = gergen([[[[1], [2]], [[3], [4]], [[5], [6]]], [[[7], [8]], [[9], [10]], [[11], [12]]], [[[13], [14]], [[15], [16]], [[17], [18]]]])
@@ -700,8 +748,11 @@ def main():
     ## 1x3 gergen
     # g = gergen([1, 2, 3])
     # print(g.ic_carpim(g)) # 14
+    # print()
+    # arr = np.array(g.listeye())
+    # print(np.dot(arr, np.array(g.listeye()))) # 14
 
-    ## 3x1 gergen ??????????????????????????
+    ## 3x1 gergen
     # g = gergen([[1], [2], [3]])
     # print(g.ic_carpim(g.boyutlandir((1, 3)))) # 14
     # # print(g.ic_carpim(g)) # err
@@ -709,7 +760,7 @@ def main():
     # arr = np.array(g.listeye())
     # print(np.dot(arr, np.array(g.boyutlandir((1,3)).listeye())))
 
-    ## 3x3 gergen ??????????????????????????
+    ## 3x3 gergen
     # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     # print(g.ic_carpim(g)) 
     # print()
@@ -752,11 +803,11 @@ def main():
 
     ## 3x1 gergen
     # g = gergen([[1], [2], [3]])
-    # print(g.dis_carpim(g)) # err
+    # print(g.dis_carpim(g)) # ValueError: Cannot calculate if the gergen is not 1D.
 
     ## 3x3 gergen 
     # g = gergen([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    # print(g.dis_carpim(g)) # err
+    # print(g.dis_carpim(g)) # ValueError: Cannot calculate if the gergen is not 1D.
 
     ### test the topla method
 
@@ -989,3 +1040,5 @@ def main():
     # arr = np.array(g.listeye())
     # print(np.mean(arr, axis=2))
     
+if __name__ == "__main__":
+    main()

@@ -254,6 +254,8 @@ class gergen:
                         return data1 * data2
                 new_data = elementwise_mult(self.__veri, other.__veri)
                 return gergen(new_data)
+        else:
+            raise TypeError("Multiplier must be a scalar or a gergen object.")
             
     def __rmul__(self, other: Union[int, float]) -> 'gergen':
         """
@@ -273,7 +275,7 @@ class gergen:
         raised to prevent division by zero. Additionally, if other is not a scalar type (int or
         float), a TypeError is raised to enforce the type requirement for the scalar divisor.
         """
-         # Check for division by zero
+        # Check for division by zero
         if other == 0:
             raise ZeroDivisionError("Cannot divide by zero.")
         
@@ -309,7 +311,34 @@ class gergen:
                 new_data = elementwise_div(self.__veri, other.__veri)
                 return gergen(new_data)
         else:
-            raise TypeError("Divisor must be a scalar or a gergen object.")    
+            raise TypeError("Divisor must be a scalar or a gergen object.")
+        
+    def __rtruediv__(self, other: Union[int, float]) -> 'gergen':
+        """
+        Handles right-side division, making division non-commutative.
+        """
+        # Directly call __truediv__ for non-commutative scalar division
+        # This ensures that scalar / gergen makes scalar over each element of gergen
+        return self.__reciprocal().__mul__(other)
+    
+    def __reciprocal(self) -> 'gergen':
+        """
+        Returns the reciprocal of the gergen object.
+        """
+        if self.__veri is None:
+            raise ValueError("Cannot calculate the reciprocal of an empty gergen.")
+        
+        # Recursive function to calculate the reciprocal
+        def reciprocal_recursive(data):
+            if isinstance(data, list):
+                return [reciprocal_recursive(subdata) for subdata in data]
+            else:
+                if data == 0:
+                    raise ZeroDivisionError("Cannot calculate the reciprocal of zero.")
+                return 1 / data
+            
+        new_data = reciprocal_recursive(self.__veri)
+        return gergen(new_data)
         
     def __add__(self, other: Union['gergen', int, float]) -> 'gergen':
         """
@@ -349,6 +378,14 @@ class gergen:
                 return gergen(new_data)
         else:
             raise TypeError("Must be a scalar or a gergen object.")
+        
+    def __radd__(self, other: Union[int, float]) -> 'gergen':
+        """
+        Handles right-side addition, making addition commutative.
+        """
+        # Directly call __add__ for commutative scalar addition
+        # This ensures that scalar + gergen uses the same logic as gergen + scalar
+        return self.__add__(other)
 
     def __sub__(self, other: Union['gergen', int, float]) -> 'gergen':
         """
@@ -388,6 +425,15 @@ class gergen:
                 return gergen(new_data)
         else:
             raise TypeError("Must be a scalar or a gergen object.")
+        
+    def __rsub__(self, other: Union[int, float]) -> 'gergen':
+        """
+        Handles right-side subtraction, making subtraction non-commutative.
+        """
+        # Directly call __sub__ for non-commutative scalar subtraction
+        # This ensures that scalar - gergen uses the same logic as gergen - scalar
+        self = self.__mul__(-1)
+        return self.__add__(other)
 
     def uzunluk(self):
         """
@@ -645,19 +691,15 @@ class gergen:
         """
         if self.__veri is None or other.__veri is None:
             raise ValueError("Cannot calculate the inner product of an empty gergen.")
-        # Check if it's 1d or 2d 1d boyut = (n,) 2d boyut = (n,m)
         
-        # Scalar case
-        if isinstance(self.__veri, (int, float)) and isinstance(other.__veri, (int, float)):
+        if isinstance(self.__veri, (int, float)) and isinstance(other.__veri, (int, float)): # Scalar case
             return self.__veri * other.__veri
         
-        # 1D case
-        if len(self.boyut()) == 1 and len(other.boyut()) == 1:
+        if len(self.boyut()) == 1 and len(other.boyut()) == 1: # 1D case
             if self.boyut() != other.boyut():
                 raise ValueError("Cannot calculate the inner product of 1D gergens with different dimensions.")
             return sum(a * b for a, b in zip(self.__veri, other.__veri))
-        # 2D case
-        elif len(self.boyut()) == 2 and len(other.boyut()) == 2:
+        elif len(self.boyut()) == 2 and len(other.boyut()) == 2: # 2D case
             if self.boyut()[1] != other.boyut()[0]:
                 raise ValueError("Cannot calculate the inner product of 2D gergens with incompatible dimensions.")
             
@@ -665,27 +707,22 @@ class gergen:
                        for col_b in zip(*other.__veri)] for row_a in self.__veri]
             return gergen(result)
         else:
-            raise ValueError("Cannot calculate the inner product of gergens with different dimensions.")
+            raise ValueError("Cannot calculate the inner product of gergens with more than 2 dimensions.")
 
     def dis_carpim(self, other):
         """
         Calculates the outer product of this gergen object with another.
         """
-        # Verifying that the other parameter is a gergen object
-        if not isinstance(other, gergen):
+        if self.__veri is None or other.__veri is None:
+            raise ValueError("Cannot calculate the outer product of an empty gergen.")
+        
+        if not isinstance(other, gergen): # Verifying that the other parameter is a gergen object
             raise TypeError("Both operands must be gergen instances.")
-
-        # Ensuring both self and other are 1-D vectors by checking their dimensions
-        if len(self.boyut()) != 1 or len(other.boyut()) != 1:
+        elif len(self.boyut()) != 1 or len(other.boyut()) != 1: # Ensuring both self and other are 1-D vectors
             raise ValueError("Both operands must be 1-D vectors to compute the outer product.")
-        
-        # Further ensure both are non-empty
-        if self.uzunluk() == 0 or other.uzunluk() == 0:
-            raise ValueError("Cannot calculate the outer product of empty vectors.")
 
-        # Calculate the outer product
+        # Calculate the outer product and return
         result = [[self_item * other_item for other_item in other.__veri] for self_item in self.__veri]
-        
         return gergen(result)
 
     def topla(self, eksen=None):
