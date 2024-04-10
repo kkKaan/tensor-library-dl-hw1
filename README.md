@@ -56,4 +56,4 @@ For detailed documentation on each class and method within the CerGen library, p
 
 ## Examples
 
-Examples of how to use the CerGen library, including how to perform various tensor operations and manipulate tensor shapes, can be found in the Jupyter Notebook included with the project. Also, for the further tests of the functionality of the class, you can check test.py, by uncommenting specific parts you can check these functions in edge cases.
+Examples of how to use the CerGen library, including how to perform various tensor operations and manipulate tensor shapes, can be found in the Jupyter Notebook included with the project. Also, for the further tests of the functionality of the class, you can check test.py, by uncommenting specific parts you may test the methods for edge cases.
