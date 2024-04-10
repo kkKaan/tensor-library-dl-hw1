@@ -20,7 +20,7 @@ CerGen (short for CENG Gergen – "gergen" being one of the Turkish translations
 Clone this repository to your local machine using:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/kkKaan/tensor-library-dl-hw1.git
 ```
 
 Ensure you have Python 3.6 or newer installed on your machine.
