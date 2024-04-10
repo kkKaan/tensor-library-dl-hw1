@@ -14,7 +14,6 @@ CerGen (short for CENG Gergen – "gergen" being one of the Turkish translations
 - [Configuration](#configuration)
 - [Documentation](#documentation)
 - [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
 
 ## Installation
 
