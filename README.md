@@ -45,11 +45,7 @@ You can then instantiate `gergen` objects and utilize the various tensor operati
 
 ## Dependencies
 
-CerGen is designed to be self-contained and does not rely on external libraries for its core functionality. However, for comparison purposes with NumPy in the provided Jupyter Notebook, NumPy must be installed. This can be done via pip:
-
-```bash
-pip install numpy
-```
+CerGen is designed to be self-contained and does not rely on external libraries for its core functionality. However, for comparison purposes with NumPy in the provided Jupyter Notebook, NumPy must be installed.
 
 ## Configuration
 
@@ -61,16 +57,4 @@ For detailed documentation on each class and method within the CerGen library, p
 
 ## Examples
 
-Examples of how to use the CerGen library, including how to perform various tensor operations and manipulate tensor shapes, can be found in the Jupyter Notebook included with the project.
-
-## Troubleshooting
-
-Ensure you are using Python 3.6 or newer, as the CerGen library has not been tested on older versions of Python.
-
-## Contributors
-
-- [Your Name or Your Organization]
-
-## License
-
-[Specify the license under which this project is released, e.g., MIT, GPL, Apache, etc.]
+Examples of how to use the CerGen library, including how to perform various tensor operations and manipulate tensor shapes, can be found in the Jupyter Notebook included with the project. Also, for the further tests of the functionality of the class, you can check test.py, by uncommenting specific parts you can check these functions in edge cases.
